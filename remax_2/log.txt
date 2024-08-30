@@ -1,0 +1,91 @@
+[2024-08-30 09:34:52] INFO:	   Comenzo la ejecucion
+[2024-08-30 09:34:59] INFO:	   [usuario:5]Inicio el proceso para publicar en clasipar 
+[2024-08-30 09:34:59] INFO:	   [usuario:5]Se ejecuta la funcion iniciar sesion
+[2024-08-30 09:34:59] INFO:	   Abriendo la pagina de inicio de sesion de clasipar
+[2024-08-30 09:35:02] ADVERTENCIA: [usuario:1][ide:1]Esperando que cargue la ventana campo correro
+[2024-08-30 09:35:03] INFO:	   Se setea el campo de correo [correo:maggygodelafs84@gmail.com]
+[2024-08-30 09:35:03] INFO:	   Se setea el campo de contraseña
+[2024-08-30 09:35:03] INFO:	   Se clickea el boton de iniciar sesion
+[2024-08-30 09:35:05] INFO:	   [usuario:5] Se inicio sesion
+[2024-08-30 09:35:05] INFO:	   [usuario:5]Se ejecuta la funcion recorrer_resultados_pendientes_a_publicar_clasipar
+[2024-08-30 09:35:05] INFO:	   [usuario:5]Se ejecuta la funcion obtener_ide_para_publicar_clasipar
+[2024-08-30 09:35:05] INFO:	   [usuario:5][ides_pendientes:8]
+[2024-08-30 09:35:05] INFO:	   [usuario:5][ides_pendientes:8]
+[2024-08-30 09:35:05] INFO:	   [usuario:5]Comienza a publicarse [ide:143048026-21]
+[2024-08-30 09:35:05] INFO:	   [usuario:5]Se valida que tenga imagenes en su carpeta
+[2024-08-30 09:35:05] INFO:	   [usuario:5][validar_existencia_imagenes:True]
+[2024-08-30 09:35:05] INFO:	   [usuario:5]Se abre la pagina publicar aviso
+[2024-08-30 09:35:10] ADVERTENCIA: [usuario:1][ide:1]Esperando que cargue la ventana Ventana Emergente
+[2024-08-30 09:35:10] INFO:	   [usuario:5]Se salta la ventana emergente
+[2024-08-30 09:35:10] INFO:	   [usuario:5]Se selecciona la categoria inmuble para la publicacion
+[2024-08-30 09:35:12] INFO:	   [usuario:5]Se selecciona la categoria Sports Centre
+[2024-08-30 09:35:13] ADVERTENCIA: [usuario:1][ide:1]Esperando que cargue la ventana boton siguiente
+[2024-08-30 09:35:17] INFO:	   [usuario:5]Continuar con la publicaciones
+[2024-08-30 09:35:17] INFO:	   [usuario:5][titulo:Sports Centre - Venta - Paraguay Central Lambaré]
+[2024-08-30 09:35:17] INFO:	   [usuario:5]Se seteo el titulo
+[2024-08-30 09:35:21] INFO:	   [usuario:5]Se seteo la descripcion
+[2024-08-30 09:35:24] INFO:	   [usuario:5]Se cambio el tipo de moneda a USD
+[2024-08-30 09:35:24] INFO:	   [usuario:5]Se seteo el departamento [departamento:Lamba]
+[2024-08-30 09:35:26] INFO:	   [usuario:5]Comenzo la funcion insertar imagenes
+[2024-08-30 09:35:26] INFO:	   [usuario:5]Carpeta lista: ['C:\\Users\\Prueba\\Desktop\\Py\\remax_2', 'datos', '143048026-21']
+[2024-08-30 09:35:26] INFO:	   [usuario:5]Se ejecuta el js para abrir las imagenes
+[2024-08-30 09:35:26] INFO:	   [usuario:5]Se ejecuto con exito
+[2024-08-30 09:35:28] INFO:	   [usuario:5]Se ejecuta la funcion para obtener las ventanas abiertas
+[2024-08-30 09:35:28] INFO:	   [usuario:5][ventana:<Win32Window left="0", top="0", width="683", height="480", title="Abrir">]
+[2024-08-30 09:35:28] INFO:	   [usuario:5]Se ingresa la ruta hasta la carpeta
+[2024-08-30 09:35:31] INFO:	   [usuario:5][ide:143048026-21]Comienza a escribirse la direccion de la carpeta
+[2024-08-30 09:35:35] INFO:	   [usuario:5]Se ingresan las imagenes encontradas
+[2024-08-30 09:35:35] INFO:	   [usuario:5]Se ingresan las imagenes
+[2024-08-30 09:35:36] INFO:	   [usuario:5]Ventanas (Abrir) luego de ingresar []
+[2024-08-30 09:35:36] INFO:	   [usuario:5]Fin de la funcion insertar imagenes
+[2024-08-30 09:35:36] INFO:	   [usuario:5]Inicio funcion setear contactos
+[2024-08-30 09:35:36] INFO:	   [usuario:5]Se setean los contactos
+[2024-08-30 09:35:36] INFO:	   [usuario:5][telefono:0981253517]
+[2024-08-30 09:35:37] INFO:	   [usuario:5][se_puede_publicar:True][ide:143048026-21]
+[2024-08-30 09:35:38] ADVERTENCIA: [usuario:5]Se intenta clickear el boton para publicar
+[2024-08-30 09:35:38] INFO:	   [usuario:5]Aparentemente se clickeo con exito
+[2024-08-30 09:35:39] ADVERTENCIA: [usuario:5][ide:143048026-21]Esperando que cargue la ventana Se publico
+[2024-08-30 09:35:49] INFO:	   [usuario:5][ide:143048026-21]Publicado!
+[2024-08-30 09:35:49] INFO:	   [usuario:5][contador_publicados:1][ides_inicial:8]
+[2024-08-30 09:35:50] INFO:	   [usuario:5]Se genera excel
+[2024-08-30 09:35:50] INFO:	   [usuario:5]Comienza a publicarse [ide:143025156-107]
+[2024-08-30 09:35:50] INFO:	   [usuario:5]Se valida que tenga imagenes en su carpeta
+[2024-08-30 09:35:50] INFO:	   [usuario:5][validar_existencia_imagenes:True]
+[2024-08-30 09:35:50] INFO:	   [usuario:5]Se abre la pagina publicar aviso
+[2024-08-30 09:35:53] ADVERTENCIA: [usuario:1][ide:1]Esperando que cargue la ventana Ventana Emergente
+[2024-08-30 09:35:53] INFO:	   [usuario:5]Se salta la ventana emergente
+[2024-08-30 09:35:53] INFO:	   [usuario:5]Se selecciona la categoria inmuble para la publicacion
+[2024-08-30 09:35:57] INFO:	   [usuario:5]Se selecciona la categoria Sports Centre
+[2024-08-30 09:35:58] ADVERTENCIA: [usuario:1][ide:1]Esperando que cargue la ventana boton siguiente
+[2024-08-30 09:36:01] INFO:	   [usuario:5]Continuar con la publicaciones
+[2024-08-30 09:36:01] INFO:	   [usuario:5][titulo:Sports Centre - Venta - Paraguay Central Lambaré]
+[2024-08-30 09:36:01] INFO:	   [usuario:5]Se seteo el titulo
+[2024-08-30 09:36:06] INFO:	   [usuario:5]Se seteo la descripcion
+[2024-08-30 09:36:08] INFO:	   [usuario:5]Se cambio el tipo de moneda a USD
+[2024-08-30 09:36:08] INFO:	   [usuario:5]Se seteo el departamento [departamento:Lamba]
+[2024-08-30 09:36:10] INFO:	   [usuario:5]Comenzo la funcion insertar imagenes
+[2024-08-30 09:36:10] INFO:	   [usuario:5]Carpeta lista: ['C:\\Users\\Prueba\\Desktop\\Py\\remax_2', 'datos', '143025156-107']
+[2024-08-30 09:36:10] INFO:	   [usuario:5]Se ejecuta el js para abrir las imagenes
+[2024-08-30 09:36:10] INFO:	   [usuario:5]Se ejecuto con exito
+[2024-08-30 09:36:12] INFO:	   [usuario:5]Se ejecuta la funcion para obtener las ventanas abiertas
+[2024-08-30 09:36:12] INFO:	   [usuario:5][ventana:<Win32Window left="0", top="0", width="683", height="480", title="Abrir">]
+[2024-08-30 09:36:12] INFO:	   [usuario:5]Se ingresa la ruta hasta la carpeta
+[2024-08-30 09:36:15] INFO:	   [usuario:5][ide:143025156-107]Comienza a escribirse la direccion de la carpeta
+[2024-08-30 09:36:19] INFO:	   [usuario:5]Se ingresan las imagenes encontradas
+[2024-08-30 09:36:19] INFO:	   [usuario:5]Se ingresan las imagenes
+[2024-08-30 09:36:20] INFO:	   [usuario:5]Ventanas (Abrir) luego de ingresar []
+[2024-08-30 09:36:20] INFO:	   [usuario:5]Fin de la funcion insertar imagenes
+[2024-08-30 09:36:21] INFO:	   [usuario:5]Inicio funcion setear contactos
+[2024-08-30 09:36:21] INFO:	   [usuario:5]Se setean los contactos
+[2024-08-30 09:36:21] INFO:	   [usuario:5][telefono:0981253517]
+[2024-08-30 09:36:21] INFO:	   [usuario:5][se_puede_publicar:True][ide:143025156-107]
+[2024-08-30 09:36:22] ADVERTENCIA: [usuario:5]Se intenta clickear el boton para publicar
+[2024-08-30 09:36:22] INFO:	   [usuario:5]Aparentemente se clickeo con exito
+[2024-08-30 09:36:23] ADVERTENCIA: [usuario:5][ide:143025156-107]Esperando que cargue la ventana Se publico
+[2024-08-30 09:36:34] INFO:	   [usuario:5][ide:143025156-107]Publicado!
+[2024-08-30 09:36:34] INFO:	   [usuario:5][contador_publicados:2][ides_inicial:8]
+[2024-08-30 09:36:34] INFO:	   [usuario:5]Se genera excel
+[2024-08-30 09:36:34] INFO:	   [usuario:5]Comienza a publicarse [ide:143063002-104]
+[2024-08-30 09:36:34] INFO:	   [usuario:5]Se valida que tenga imagenes en su carpeta
+[2024-08-30 09:36:34] INFO:	   [usuario:5][validar_existencia_imagenes:True]
+[2024-08-30 09:36:34] INFO:	   [usuario:5]Se abre la pagina publicar aviso

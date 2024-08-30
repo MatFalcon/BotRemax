@@ -1,0 +1,27 @@
+path fila
+/html/body/div/main/section/div/div[2]/article/div/div[2]/div[2]/div[2]/div/div[1]
+/html/body/div/main/section/div/div[2]/article/div/div[2]/div[2]/div[2]/div/div[2]
+
+
+path_ruc 
+/html/body/div/main/section/div/div[2]/article/div/div[2]/div[2]/div[2]/div/div[1]/div[3]/p
+
+
+
+path contacto
+/html/body/div[2]/div[3]/header/div/div/div/button[2]/span[1]
+
+
+path_correo
+/html/body/div[2]/div[3]/div[2]/div[2]/div[3]/div/div/div/div/div[1]
+/html/body/div[2]/div[3]/div[2]/div[2]/div[3]/div/div/div/div/div[1]/span
+
+
+boton_siguiente
+/html/body/div/main/section/div/div[2]/article/div/div[3]/div/button[3]/span[1]/span
+
+
+
+
+link 
+https://prod1891.ekconnect.com.py/Gestion/cliente
