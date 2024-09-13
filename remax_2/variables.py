@@ -15,11 +15,12 @@ url = "https://www.remax.com.py/"
 path_campo_ciudad = "/html/body/form/div[3]/div[3]/div[1]/div/div[3]/div/div/div/div[2]/div[2]/input"
 path_boton_buscar = "/html/body/form/div[3]/div[3]/div[1]/div/div[3]/div/div/div/div[7]/button"
 path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[3]/div[2]/div/nav/ul/li[7]/a"
+path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[3]/div[2]/div/nav/ul/li[7]"
 
 # para el bucle en el que quita los datos de cada propiedad
 tipo_propiedad_excluir = ["RESERVADO", "VENDIDO"]
-path_tipo_propiedad = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[","]/div/div[7]/span"]
-
+path_tipo_propiedad = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[", "]/div/div[7]/span"]
+path_tipo_propiedad = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[1]/div/div[", "]/div/div[7]/span"]
 # paths para quitar datos por cada propiedad
 path_titulo = "/html/body/form/div[3]/div[5]/div[4]/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[1]/div[1]/h1"
 
@@ -49,6 +50,7 @@ path_imagen = ["/html/body/form/div[3]/div[5]/div[4]/div[1]/div/div/div/div/div[
 path_agente = "/html/body/form/div[3]/div[5]/div[4]/div[2]/div[2]/div[1]/div[1]/section/div/div/div/div[1]/div[2]/h4/a"
 
 path_resultado = [f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[", "]/div/div[6]/span/a"]
+path_resultado2 = [f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[1]/div/div[", "]/div/div[8]/a"]
 path_resultado_comun = f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[{3}]/div/div[6]/span/a"
 path_tarjeta = [f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[", "]/div/div[3]/div/span"]
 

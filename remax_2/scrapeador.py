@@ -162,8 +162,16 @@ class RemaxScrap:
             time.sleep(3)
             escribir_en_log(f"Se realizar la busqueda de las propiedades de la ciudad {self.ciudad}", 1)
             self.navegador.click_elemento(variables.path_boton_buscar)
+
+            time.sleep(10)
             # espera que cargue  algun elemento de la pagina, en este caso el boton para pasar a los siguientes resultados
             self.navegador.esperarPorObjeto(self.navegador, 10, variables.path_boton_siguiente, "boton siguiente")
+            elemento_boton = self.navegador.obtener_elemento(By.XPATH, variables.path_boton_siguiente)
+            if elemento_boton is None:
+                variables.path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[3]/div[2]/div/nav/ul/li[7]/a"
+
+
+
 
     def extraer_links_ventana_actual(self):
         """Extrae los links de los resultados disponibles en la vista actual"""
@@ -172,6 +180,7 @@ class RemaxScrap:
             escribir_en_log(f"Se quita datos del resultado: {indice}", 1)
             # inicializacion de los paths de los elementos que vamos a extraer
             path_resultado = f"{variables.path_resultado[0]}{indice}{variables.path_resultado[1]}"
+            path_resultado2 = f"{variables.path_resultado2[0]}{indice}{variables.path_resultado2[1]}"
             path_tarjeta = f"{variables.path_tarjeta[0]}{indice}{variables.path_tarjeta[1]}"
             path_tipo_propiedad = f"{variables.path_tipo_propiedad[0]}{indice}{variables.path_tipo_propiedad[1]}"
 
@@ -189,6 +198,9 @@ class RemaxScrap:
             if estado_propiedad not in variables.tipo_propiedad_excluir:
                 # se obtiene el link
                 elemento_link = self.navegador.obtener_elemento(By.XPATH, path_resultado)
+                if elemento_link is None:
+                    elemento_link = self.navegador.obtener_elemento(By.XPATH, path_resultado2)
+
                 link_propiedad = self.navegador.obtener_atributo_elemento(elemento_link, "href")
                 escribir_en_log(f"[link:{link_propiedad}]", 1)
                 # se valida que no exista en la base para no duplicar el scrapeo
@@ -400,8 +412,6 @@ class RemaxScrap:
                 escribir_en_log(f"Tiempo descarga {duracion_descarga:.2f}", 1)
                 contador += 1
 
-
-
     def scrapear_propiedades_pendientes(self):
 
         escribir_en_log(f"Funcion scrapear_propiedades_pendientes", 1)
@@ -439,7 +449,7 @@ class RemaxScrap:
 
 
 
-"""
+
 remax = RemaxScrap("Sanber", 1, 6)
 remax.instanciar_navegador()
 remax.abrir_navegador()
@@ -448,4 +458,3 @@ remax.abrir_base()
 remax.recorrer_ventanas()
 remax.scrapear_propiedades_pendientes()
 remax.navegador.cerra_navegador()
-"""
