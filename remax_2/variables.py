@@ -21,6 +21,9 @@ path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[
 tipo_propiedad_excluir = ["RESERVADO", "VENDIDO"]
 path_tipo_propiedad = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[", "]/div/div[7]/span"]
 path_tipo_propiedad = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[1]/div/div[", "]/div/div[7]/span"]
+path_tipo_propiedad2 = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[1]/div/div[", "]/div[2]/div/div[1]/div/div[2]"]
+path_tipo_propiedad3 = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[1]/div/div[", "]/div[2]/div/div[1]/div/div[2]"]
+
 # paths para quitar datos por cada propiedad
 path_titulo = "/html/body/form/div[3]/div[5]/div[4]/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[1]/div[1]/h1"
 
