@@ -133,7 +133,7 @@ class RemaxScrap:
         self.propiedades_scrapear = propiedades_scrapear
         self.link_descargando = ""
         self.ide_descargando = "Sin Ide"
-
+        self.link_intentos = {}
     def abrir_base(self):
         """abre la base para validaciones"""
         base = BaseRemax()
@@ -157,20 +157,18 @@ class RemaxScrap:
         """
             Rellenar el campo de ciudad, luego realiza la busqueda
         """
+        if self.propiedades_agregar > 0:
+            if self.navegador.rellenar_elemento(variables.path_campo_ciudad, self.ciudad_campo[self.ciudad]):
+                time.sleep(3)
+                escribir_en_log(f"Se realizar la busqueda de las propiedades de la ciudad {self.ciudad}", 1)
+                self.navegador.click_elemento(variables.path_boton_buscar)
 
-        if self.navegador.rellenar_elemento(variables.path_campo_ciudad, self.ciudad_campo[self.ciudad]):
-            time.sleep(3)
-            escribir_en_log(f"Se realizar la busqueda de las propiedades de la ciudad {self.ciudad}", 1)
-            self.navegador.click_elemento(variables.path_boton_buscar)
-
-            time.sleep(10)
-            # espera que cargue  algun elemento de la pagina, en este caso el boton para pasar a los siguientes resultados
-            self.navegador.esperarPorObjeto(self.navegador, 10, variables.path_boton_siguiente, "boton siguiente")
-            elemento_boton = self.navegador.obtener_elemento(By.XPATH, variables.path_boton_siguiente)
-            if elemento_boton is None:
-                variables.path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[3]/div[2]/div/nav/ul/li[7]/a"
-
-
+                time.sleep(10)
+                # espera que cargue  algun elemento de la pagina, en este caso el boton para pasar a los siguientes resultados
+                self.navegador.esperarPorObjeto(self.navegador, 3, variables.path_boton_siguiente, "boton siguiente")
+                elemento_boton = self.navegador.obtener_elemento(By.XPATH, variables.path_boton_siguiente)
+                if elemento_boton is None:
+                    variables.path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[3]/div[2]/div/nav/ul/li[7]/a"
 
 
     def extraer_links_ventana_actual(self):
@@ -183,7 +181,8 @@ class RemaxScrap:
             path_resultado2 = f"{variables.path_resultado2[0]}{indice}{variables.path_resultado2[1]}"
             path_tarjeta = f"{variables.path_tarjeta[0]}{indice}{variables.path_tarjeta[1]}"
             path_tipo_propiedad = f"{variables.path_tipo_propiedad[0]}{indice}{variables.path_tipo_propiedad[1]}"
-
+            path_tipo_propiedad2 = f"{variables.path_tipo_propiedad2[0]}{indice}{variables.path_tipo_propiedad2[1]}"
+            path_tipo_propiedad3 = f"{variables.path_tipo_propiedad3[0]}{indice}{variables.path_tipo_propiedad3[1]}"
             # estado y tipo de propiedad
             try:
                 estado_propiedad = self.navegador.obtener_elemento(By.XPATH, path_tarjeta).text
@@ -193,66 +192,88 @@ class RemaxScrap:
                 tipo_propiedad = self.navegador.obtener_elemento(By.XPATH, path_tipo_propiedad).text
             except:
                 tipo_propiedad = "Sin Tipo"
+
+            if tipo_propiedad == "Sin Tipo":
+                try:
+                    tipo_propiedad = self.navegador.obtener_elemento(By.XPATH, path_tipo_propiedad2).text
+                except:
+                    try:
+                        tipo_propiedad = self.navegador.obtener_elemento(By.XPATH, path_tipo_propiedad3).text
+                    except:
+                        tipo_propiedad = "Sin Tipo"
+
+
             escribir_en_log(f"[Estado:{estado_propiedad}][Tipo:{tipo_propiedad}]", 1)
             # validar que sean propiedades disponibles
             if estado_propiedad not in variables.tipo_propiedad_excluir:
                 # se obtiene el link
                 elemento_link = self.navegador.obtener_elemento(By.XPATH, path_resultado)
                 if elemento_link is None:
+                    variables.path_resultado = variables.path_resultado2
                     elemento_link = self.navegador.obtener_elemento(By.XPATH, path_resultado2)
 
                 link_propiedad = self.navegador.obtener_atributo_elemento(elemento_link, "href")
+                if link_propiedad is None:
+                    variables.path_resultado = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[1]/div/div[", "]/div[2]/div/div[1]/div/div[3]/a"]
                 escribir_en_log(f"[link:{link_propiedad}]", 1)
                 # se valida que no exista en la base para no duplicar el scrapeo
                 if link_propiedad != None:
+                    if link_propiedad not in self.link_intentos.keys():
+                        self.link_intentos[link_propiedad] = 1
+                    else:
+                        self.link_intentos[link_propiedad] += 1
+                    if self.link_intentos[link_propiedad] > 6:
+                        self.hay_resultados = False
+                        escribir_en_log(f"Se alcanzo el final de los resultados disponibles", 2)
 
                     if not self.base.validacion_link(link_propiedad):
                         if self.propiedades_agregar >= self.links_extraidos:
                             self.base.crear_nueva_fila(tipo_propiedad, link_propiedad, self.ciudad)
+
                             self.links_extraidos += 1
                             escribir_en_log(f"[links_extraidos:{self.links_extraidos}]", 1)
 
     def recorrer_ventanas(self):
+        if self.propiedades_agregar > 0:
+            while self.hay_resultados:
+                recorrido = 0
+                # esperar que cargue almenos una propiedad
+                esperarPorObjeto(self.navegador.driver, 10,
+                                 By.XPATH,
+                                 f"{variables.path_resultado[0]}5{variables.path_resultado[1]}",
+                                 "Algun resultado")
+                # se recorre dos veces por que a veces se salta alguna propiedad
+                escribir_en_log(f"Recorrido: {recorrido}", 1)
+                while recorrido < 2:
 
-        while self.hay_resultados:
-            recorrido = 0
-            # esperar que cargue almenos una propiedad
-            esperarPorObjeto(self.navegador.driver, 10,
-                             By.XPATH,
-                             f"{variables.path_resultado[0]}5{variables.path_resultado[1]}",
-                             "Algun resultado")
-            # se recorre dos veces por que a veces se salta alguna propiedad
-            escribir_en_log(f"Recorrido: {recorrido}", 1)
-            while recorrido < 2:
-
-                self.extraer_links_ventana_actual()
+                    self.extraer_links_ventana_actual()
 
 
-                if self.links_extraidos > self.propiedades_agregar:
+                    if self.links_extraidos > self.propiedades_agregar:
 
-                    escribir_en_log(f"Se alcanzo la cantidad a agregar: {self.propiedades_agregar}", 1)
-                    return
+                        escribir_en_log(f"Se alcanzo la cantidad a agregar: {self.propiedades_agregar}", 1)
+                        return
 
-                recorrido += 1
+                    recorrido += 1
 
-            resultado_comun_actual = self.navegador.obtener_elemento(By.XPATH, variables.path_resultado_comun)
-            resultado_comun_actual = self.navegador.obtener_atributo_elemento(resultado_comun_actual, "href")
+                resultado_comun_actual = self.navegador.obtener_elemento(By.XPATH, variables.path_resultado_comun)
+                resultado_comun_actual = self.navegador.obtener_atributo_elemento(resultado_comun_actual, "href")
 
-            # para validar que no se halla quedado colgala la pagina
-            if resultado_comun_actual != self.resultado_comun:
-                self.resultado_comun = resultado_comun_actual
-            else:
-                self.navegador.click_elemento(variables.path_boton_siguiente)
-                self.extraer_links_ventana_actual()
+                # para validar que no se halla quedado colgada la pagina
+                if resultado_comun_actual != self.resultado_comun:
+                    self.resultado_comun = resultado_comun_actual
+                else:
+                    self.navegador.click_elemento(variables.path_boton_siguiente)
+                    self.extraer_links_ventana_actual()
 
-            boton_siguiente = self.navegador.esperarPorObjeto(self.navegador.driver, 5,
-                                                              variables.path_boton_siguiente, "Boton siguiente")
+                boton_siguiente = self.navegador.esperarPorObjeto(self.navegador.driver, 5,
+                                                                  variables.path_boton_siguiente, "Boton siguiente")
 
-            if boton_siguiente:
-                self.navegador.click_elemento(variables.path_boton_siguiente)
-            else:
-                escribir_en_log(f"Se llego al final de los resultados disponibles", 1)
-                self.hay_resultados = False
+                if boton_siguiente:
+                    self.navegador.click_elemento(variables.path_boton_siguiente)
+                else:
+                    escribir_en_log(f"Se llego al final de los resultados disponibles", 1)
+                    self.hay_resultados = False
 
     def validacion_para_descarga(self, link):
 
@@ -294,7 +315,7 @@ class RemaxScrap:
         titulo = self.navegador.obtener_elemento(By.XPATH, variables.path_titulo).text
         escribir_en_log(f"Se obtuvo el titulo: {titulo}", 1)
         self.base.actualizar_columna(self.link_descargando, 'titulo', titulo)
-
+        escribir_en_log(f"Se actualizo el titulo: {titulo}", 1)
     def extraer_precio(self):
         """Extrae el precio de la propiedad que se encuentra en la ventana"""
         precio = "₲"
@@ -304,7 +325,7 @@ class RemaxScrap:
                 break
             except:
                 pass
-        print(f"Precio:", precio)
+
         if "₲" in precio:
             precio = precio.replace("₲", "").replace(",", "").rstrip().lstrip() + " GS"
         else:
@@ -312,6 +333,7 @@ class RemaxScrap:
         escribir_en_log(f"Se obtuvo el precio y tipo de moneda: {precio}", 1)
 
         self.base.actualizar_columna(self.link_descargando, "precio", precio)
+        escribir_en_log(f"Columna Precio: {precio}", 1)
 
     def extraer_id(self):
         escribir_en_log(f"Se intentara sacar el ide entre los indices 3 y 11", 1)
@@ -329,6 +351,7 @@ class RemaxScrap:
         if indice != 10 and id != 1:
             escribir_en_log(f"Se extrajo el [ide:{id}]", 1)
             self.base.actualizar_columna(self.link_descargando, "ide", id)
+            escribir_en_log(f"Columna Ide {id}", 1)
             self.ide_descargando = id
 
     def extraer_descripcion(self):
@@ -340,39 +363,57 @@ class RemaxScrap:
                 escribir_en_log(f"Se extrae la descripcion", 1)
                 break
         self.base.actualizar_columna(self.link_descargando, "descripcion", descripcion)
-
+        try:
+            escribir_en_log(f"Se actualizo la descripcion {descripcion[0:30].lstrip().rstrip()}...", 1)
+        except:
+            pass
     def extraer_agente_inmobiliario(self):
         agenteweb = self.navegador.obtener_elemento(By.XPATH, variables.path_agente)
         agente = agenteweb.text
         escribir_en_log(f"Se obtiene el agente: {agente}", 1)
         self.base.actualizar_columna(self.link_descargando, "agente_remax", agente)
-
+        escribir_en_log(f"Se actualizo el agente: {agente}", 1)
     def extraer_atributos_tabla(self):
 
         continuar = True
         indice = 1
-        atributos = {}
+
 
         while continuar:
             path_nombre = f"{variables.path_atributo[0]}{indice}{variables.path_atributo[1]}"
             path_valor = f"{variables.path_valor[0]}{indice}{variables.path_valor[1]}"
             nombreweb = self.navegador.obtener_elemento(By.XPATH, path_nombre)
             valorweb = self.navegador.obtener_elemento(By.XPATH, path_valor)
+            mts = False
             if nombreweb is not None:
+                print(f"="*50)
+                print(nombreweb.text)
+                print(f"="*50)
                 if valorweb is not None:
                     if nombreweb.text == 'Nº de Dormitorios:':
                         self.base.actualizar_columna(self.link_descargando, "habitaciones", valorweb.text)
+                        escribir_en_log(f"Se actualizo la columna habitaciones: {valorweb.text}", 1)
                     elif nombreweb.text == 'Baños:':
                         self.base.actualizar_columna(self.link_descargando, "banio", valorweb.text)
-                    elif nombreweb.text == 'Total Mts²':
+                        escribir_en_log(f"Se actualizo la columna banio: {valorweb.text}", 1)
+                    elif nombreweb.text == "Sup. Lote (m²)":
                         self.base.actualizar_columna(self.link_descargando, "mts", valorweb.text)
-                    atributos[nombreweb.text] = valorweb.text
+                        escribir_en_log(f"Se actualizo la columna mts: {valorweb.text}", 1)
+                        mts = True
+                    elif nombreweb.text == "Area de Construcción (m²)":
+                        self.base.actualizar_columna(self.link_descargando, "area", valorweb.text)
+                        escribir_en_log(f"Se actualizo la columna area: {valorweb.text}", 1)
             else:
                 continuar = False
-
+            if not mts:
+                if nombreweb is not None:
+                    if valorweb is not None:
+                        if nombreweb.text == "Total Mts²":
+                            self.base.actualizar_columna(self.link_descargando, "mts", valorweb.text)
+                            escribir_en_log(f"Se actualizo la columna mts: {valorweb.text}", 1)
             indice += 1
         escribir_en_log(f"Se quitaron los datos extras de la propiedad: ", 1)
-        escribir_en_log(f"{atributos}", 1)
+
 
     def extraer_ruta_imagenes(self):
         seguir = True
@@ -413,44 +454,44 @@ class RemaxScrap:
                 contador += 1
 
     def scrapear_propiedades_pendientes(self):
+        if self.propiedades_scrapear > 0:
+            escribir_en_log(f"Funcion scrapear_propiedades_pendientes", 1)
+            resultados_validos_descargador = 0
+            contador = 1
+            contador_proceso = 1
+            links_disponibles = self.base.obtener_links()
+            escribir_en_log(f"Se debe scrapear {self.propiedades_scrapear} propieades", 1)
+            escribir_en_log(f"Links Disponibles: {links_disponibles}", 1)
+            for link in links_disponibles:
+                escribir_en_log(f"Procesando {contador_proceso} de {self.propiedades_scrapear}", 1)
 
-        escribir_en_log(f"Funcion scrapear_propiedades_pendientes", 1)
-        resultados_validos_descargador = 0
-        contador = 1
-        contador_proceso = 1
-        links_disponibles = self.base.obtener_links()
-        escribir_en_log(f"Se debe scrapear {self.propiedades_scrapear} propieades", 1)
-        escribir_en_log(f"Links Disponibles: {links_disponibles}", 1)
-        for link in links_disponibles:
-            escribir_en_log(f"Procesando {contador_proceso} de {self.propiedades_scrapear}", 1)
+                if self.validacion_para_descarga(link):
+                    escribir_en_log(f"Se abre el link: {link}", 1)
+                    self.link_descargando = link
+                    self.navegador.abrir_url(link)
+                    self.navegador.esperarPorObjeto(self.navegador, 10, variables.path_titulo, "Titulo Propiedad")
+                    # funcion para extraer todos los campos
+                    if self.validar_pagina_existe():
+                        self.extraer_titulo()
+                        self.extraer_precio()
+                        self.extraer_id()
+                        self.extraer_descripcion()
+                        self.extraer_agente_inmobiliario()
+                        self.extraer_atributos_tabla()
+                        self.descargar_imagenes()
 
-            if self.validacion_para_descarga(link):
-                escribir_en_log(f"Se abre el link: {link}", 1)
-                self.link_descargando = link
-                self.navegador.abrir_url(link)
-                self.navegador.esperarPorObjeto(self.navegador, 10, variables.path_titulo, "Titulo Propiedad")
-                # funcion para extraer todos los campos
-                if self.validar_pagina_existe():
-                    self.extraer_titulo()
-                    self.extraer_precio()
-                    self.extraer_id()
-                    self.extraer_descripcion()
-                    self.extraer_agente_inmobiliario()
-                    self.extraer_atributos_tabla()
-                    self.descargar_imagenes()
+                        resultados_validos_descargador += 1
 
-                    resultados_validos_descargador += 1
+                    if resultados_validos_descargador >= self.propiedades_scrapear:
+                        break
 
-                if resultados_validos_descargador >= self.propiedades_scrapear:
-                    break
-
-            contador_proceso += 1
-
-
+                contador_proceso += 1
 
 
 
-remax = RemaxScrap("Sanber", 1, 6)
+
+
+remax = RemaxScrap("Asuncion", 0, 100)
 remax.instanciar_navegador()
 remax.abrir_navegador()
 remax.buscar_ciudad()
