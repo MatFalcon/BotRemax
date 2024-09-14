@@ -9,7 +9,7 @@ from para_log import escribir_en_log
 from credenciales import crenciales_paginas
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service as EdgeService
-
+import scrapeador
 
 from pathlib import PurePath, Path
 # Desactivar todas las advertencias de Pandas
@@ -92,22 +92,21 @@ def ejecutar_por_ciudad(numero_ciudad):
 
     print(f"Ciudad a Scrapear: {ciudades[numero_ciudad]}\n", "="*80, "\n")
     driver = ""
+    remax_ = scrapeador.RemaxScrap(ciudades[numero_ciudad], cantidad_agregar, cantidad_scrapear)
+    remax_.instanciar_navegador()
+    remax_.abrir_navegador()
+    remax_.abrir_base()
     if cantidad_agregar > 0:
-        escribir_en_log("Abriendo el navegador para entrar en remax", 1)
-        driver = remax.webdriver.Edge(service=edge_service, options=remax.options)
-        escribir_en_log("Se Abrio el navegador para entrar en remax", 1)
-        remax.buscar_ciudad(ciudades[numero_ciudad], driver)
-        escribir_en_log(f"Se realiza la busqueda de {ciudades[numero_ciudad]}", 1)
-        remax.extraer_links(cantidad_de_resultados, driver, ciudades[numero_ciudad], cantidad_agregar)
-        driver.close()
+
+        remax_.buscar_ciudad()
+        remax_.recorrer_ventanas()
 
     time.sleep(5)
     if cantidad_scrapear > 0:
-        driver = remax.webdriver.Edge(service=edge_service, options=options)
-        remax.recorrer_links_de_resultados(driver, cantidad_scrapear)
+        remax_.scrapear_propiedades_pendientes()
+    remax_.navegador.cerra_navegador()
 
-    if driver != "":
-        driver.close()
+
 def validar_columna_usuario(credenciales):
     """"
         valida que existan las columnas suficientes para cada usuario
@@ -176,7 +175,7 @@ def realizar_publicaciones():
     """
 #0"Asuncion", 1"Sanber", 2"Fernando", 3"Sanlo", 4"Luque" , 5 "Lambare", 6 "Aregua", 7 "Alto", 8 "Paraguay"
 #9 "Villa Elisa", 10 "Presidente Hayes", 11 "Ñemby", 12 "Capiata"
-ejecutar_por_ciudad(6)
+ejecutar_por_ciudad(12)
 
 if cantidad_publicar > 0:
     realizar_publicaciones()
