@@ -93,9 +93,10 @@ def ejecutar_por_ciudad(numero_ciudad):
     print(f"Ciudad a Scrapear: {ciudades[numero_ciudad]}\n", "="*80, "\n")
     driver = ""
     remax_ = scrapeador.RemaxScrap(ciudades[numero_ciudad], cantidad_agregar, cantidad_scrapear)
-    remax_.instanciar_navegador()
-    remax_.abrir_navegador()
-    remax_.abrir_base()
+    if cantidad_scrapear > 0 or cantidad_agregar > 0:
+        remax_.instanciar_navegador()
+        remax_.abrir_navegador()
+        remax_.abrir_base()
     if cantidad_agregar > 0:
 
         remax_.buscar_ciudad()
@@ -104,7 +105,10 @@ def ejecutar_por_ciudad(numero_ciudad):
     time.sleep(5)
     if cantidad_scrapear > 0:
         remax_.scrapear_propiedades_pendientes()
-    remax_.navegador.cerra_navegador()
+    try:
+        remax_.navegador.cerra_navegador()
+    except:
+        pass
 
 
 def validar_columna_usuario(credenciales):
@@ -124,6 +128,11 @@ def validar_columna_usuario(credenciales):
             pass
         else:
             base[f"{numero_usuario}publicado_clasipar"] = numpy.nan
+        if "intentos_info" not in columnas:
+            base["intentos_info"] = 1
+
+        if "intentos_clasi" not in columnas:
+            base["intentos_clasi"] = 1
 
     base.to_csv(remax.RUTA_DF, index=False)
 

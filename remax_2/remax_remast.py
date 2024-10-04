@@ -41,9 +41,16 @@ url = "https://www.remax.com.py/"
 # path para inicio
 path_campo_ciudad = "/html/body/form/div[3]/div[3]/div[1]/div/div[3]/div/div/div/div[2]/div[2]/input"
 path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[3]/div[2]/div/nav/ul/li[7]/a"
+path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[3]/div[2]/div/nav/ul/li[7]/a"
+path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[3]/div[2]/div/nav/ul/li[7]/a/i"
+path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[3]/div[2]/div/nav/ul/li[7]/a"
+path_boton_siguiente = "/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[3]/div[2]/div/nav/ul/li[7]/a"
 # para el bucle en el que quita los datos de cada propiedad
 tipo_propiedad_excluir = ["RESERVADO", "VENDIDO"]
-path_tipo_propiedad = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[","]/div/div[7]/span"]
+path_tipo_propiedad = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[", "]/div/div[7]/span"]
+path_tipo_propiedad = ["/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[1]/div/div[", "]/div/div[7]/span"]
+
+
 
 # paths para quitar datos por cada propiedad
 path_titulo = "/html/body/form/div[3]/div[5]/div[4]/div[2]/div[1]/div[1]/div/div[2]/div/div[1]/div[1]/div[1]/h1"
@@ -160,7 +167,8 @@ def buscar_ciudad(ciudad, navegador):
     # click para realizar la busqueda
     navegador.find_element(By.XPATH, "/html/body/form/div[3]/div[3]/div[1]/div/div[3]/div/div/div/div[7]/button").click()
     # esperar a que cargue la pagina
-    esperarPorObjeto(navegador, 30, By.XPATH,  path_boton_siguiente, "Algun resultado de la pagina")
+    esperarPorObjeto(navegador, 10, By.XPATH,  path_boton_siguiente, "Algun resultado de la pagina")
+
     ciudad_busqueda_actual = ciudad
 
 def extraer_links(links_por_resultados, navegador, ciudad, cantidad_agregar):
@@ -188,7 +196,12 @@ def extraer_links(links_por_resultados, navegador, ciudad, cantidad_agregar):
             for indice in range(1, links_por_resultados):#26 es la cantidad resultados que retorna la pagina para llamar a la funcion por default con esa cantidad
 
                 path_resultado = f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[{indice}]/div/div[6]/span/a"
+                path_resultado2 = f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[1]/div/div[{indice}]/div/div[8]/a"
+                path_resultado = f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[1]/div/div[3]/div[2]/div/div[1]/div/div[3]/a"
+                path_resultado = f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div/div[1]/div/div[{indice}]/div[2]/div/div[1]/div/div[3]/a"
+
                 path_tarjeta = f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[3]/div[2]/div[1]/div[1]/div/div[{indice}]/div/div[3]/div/span"
+                path_tarjeta = f"/html/body/div[1]/form/div[3]/div[5]/div/div[8]/div/div[3]/div/div/div[2]/div[1]/div/div[{indice}]/div/div[3]/div/span"
 
                 try:
                     estado_propiedad = navegador.find_element(By.XPATH, path_tarjeta).text
@@ -215,10 +228,15 @@ def extraer_links(links_por_resultados, navegador, ciudad, cantidad_agregar):
                         #asd
                         try:
                             link_resultado = navegador.find_element(By.XPATH, path_resultado).get_attribute("href")
+
                             escribir_en_log(f"[Iteracion:{contador_iteracion}][indice:{indice}]Se obtiene el link: {link_resultado}", 1)
                         except:
-                            escribir_en_log(f"No se pudo sacar el link [indice:{indice}] ", 1)
-                            pass
+                            try:
+                                link_resultado = navegador.find_element(By.XPATH, path_resultado2).get_attribute("href")
+                            except:
+                                escribir_en_log(f"No se pudo sacar el link [indice:{indice}] ", 1)
+
+
                         try:
                             tipo = navegador.find_element(By.XPATH, f"{path_tipo_propiedad[0]}{indice}{path_tipo_propiedad[1]}").text
                             escribir_en_log(f"[Iteracion:{contador_iteracion}][indice:{indice}]Se saco el tipo de propiedad [tipo:{tipo}]", 1)
@@ -270,7 +288,11 @@ def extraer_links(links_por_resultados, navegador, ciudad, cantidad_agregar):
         if hay_resultados:
             try:
                 esperarPorObjeto(navegador, 10, By.XPATH, path_boton_siguiente, "Algun resultado de la pagina")
-                navegador.find_element(By.XPATH, path_boton_siguiente).click()
+                try:
+                    navegador.find_element(By.XPATH, path_boton_siguiente).click()
+                except Exception as ex:
+                    print(ex)
+                    input("asdasdsadasda")
                 escribir_en_log("Se intenta clickear el boton siguiente", 1)
                 no_cargaron_nuevos = True
                 veces_intentandas = 0# contador para refrescar el navegador en caso que quede pegada a una pestana

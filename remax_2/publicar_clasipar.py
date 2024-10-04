@@ -117,7 +117,7 @@ def obtener_ide_para_publicar_clasipar(numero_usuario):
     base_remax = pd.read_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'))
     columna = f'{numero_usuario}publicado_clasipar'
 
-    ide = base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide']))]['ide'].to_list()
+    ide = base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide'])) & (base_remax["intentos_clasi"] < 4)]['ide'].to_list()
 
     base_remax = ""
     return ide
@@ -455,7 +455,7 @@ def insertar_imagen_clasipar(ide, navegador, numero_usuario, telefono):
         escribir_en_log(f"[usuario:{numero_usuario}]No deberia haber ninguna ventana abierta", 3)
         escribir_en_log(f"[usuario:{numero_usuario}]Se intenta cerrar todas las ventanas (Abrir) ", 3)
         var_validaciones['set_imagenes'] = False
-        print("Se encontro un error al querer cargar las imagenes, no se realizar la publicacion")
+
         for ventana in lista_ventanas_final:
             escribir_en_log(f"[usuario:{numero_usuario}]Se cierra la ventana {ventana}", 3)
             ventana.close()
@@ -644,6 +644,8 @@ def recorrer_resultados_pendientes_a_publicar_clasipar(navegador, numero_usuario
                         base_remax.loc[indice, f'{numero_usuario}publicado_clasipar'] = '1'
                         base_remax.to_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'), index=False)
                         contador_publicados += 1
+                        base_remax.loc[indice, "intentos_clasi"] = 1
+                        base_remax.to_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'), index=False)
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Publicado!", 1)
                         escribir_en_log(f"[usuario:{numero_usuario}][contador_publicados:{contador_publicados}][ides_inicial:{len(ides_pendientes)}]", 1)
                     
@@ -660,9 +662,18 @@ def recorrer_resultados_pendientes_a_publicar_clasipar(navegador, numero_usuario
                         
                 except Exception as ex:
                     escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo clickear el boton para publicar", 3)
-                    
+
 
             else:
+
+                indice = base_remax.loc[base_remax['ide'] == ide].index[0]
+                contador_intentos_publicar = base_remax.loc[base_remax["ide"] == ide]["intentos_clasi"].to_list()[0]
+                base_remax.loc[indice, "intentos_clasi"] = contador_intentos_publicar + 1
+                base_remax.to_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'), index=False)
+                try:
+                    base_remax.to_excel(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.xlsx'), index=False)
+                except:
+                    pass
                 iniciar_a_publicar(navegador, numero_usuario)
             contador += 1
 

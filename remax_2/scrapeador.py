@@ -86,7 +86,7 @@ class BaseRemax:
                         'ciudad': ciudad, 'publicado_facebook': '',
                         'fecha_inserion': datetime.now().strftime("%d/%m/%Y"),
                         'publicado_clasipar': '', 'publicado_info': '',
-                        'publicado_hendyla': ''}]
+                        'publicado_hendyla': '', 'intentos':1}]
         modelo_DF = pd.DataFrame(modelo_fila)
         self.tabla = pd.concat([self.tabla, modelo_DF], ignore_index=True)
         escribir_en_log(f"Nuevo registro para el link: {link}", 1)
@@ -386,9 +386,6 @@ class RemaxScrap:
             valorweb = self.navegador.obtener_elemento(By.XPATH, path_valor)
             mts = False
             if nombreweb is not None:
-                print(f"="*50)
-                print(nombreweb.text)
-                print(f"="*50)
                 if valorweb is not None:
                     if nombreweb.text == 'Nº de Dormitorios:':
                         self.base.actualizar_columna(self.link_descargando, "habitaciones", valorweb.text)
@@ -491,11 +488,3 @@ class RemaxScrap:
 
 
 
-remax = RemaxScrap("Asuncion", 0, 100)
-remax.instanciar_navegador()
-remax.abrir_navegador()
-remax.buscar_ciudad()
-remax.abrir_base()
-remax.recorrer_ventanas()
-remax.scrapear_propiedades_pendientes()
-remax.navegador.cerra_navegador()

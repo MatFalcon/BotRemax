@@ -42,6 +42,7 @@ class Navegador:
     def obtener_elemento(self, by, value):
         try:
             elemento = self.driver.find_element(by, value)
+
             return elemento
         except Exception as e:
             return None
@@ -58,6 +59,7 @@ class Navegador:
         """
         try:
             elemento = self.obtener_elemento(By.XPATH, path)
+            print(f"Elemento :{[elemento]}")
             if elemento:
                 elemento.click()
                 escribir_en_log(f"Elemento clickeado", 1)

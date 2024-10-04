@@ -175,9 +175,14 @@ def reiniciar_publicar_info(navegador):
 def obtener_ide_para_publicar_info(numero_usuario):
 
     base_remax = pd.read_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'))
-    columna =f"{numero_usuario}publicado_info"
-    ide = base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide']))]['ide'].to_list()
-
+    columna = f"{numero_usuario}publicado_info"
+    try:
+        ide = base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide'])) & (base_remax["intentos_info"] < 3)]['ide'].to_list()
+    except:
+        base_remax["intentos_info"] = 1
+        ide = \
+        base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide'])) & (base_remax["intentos_info"] < 3)][
+            'ide'].to_list()
     base_remax = ""
 
     return ide
@@ -604,6 +609,7 @@ def setear_mts(navegador, construccion, tipo, numero_usuario, ide):
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts:{mts}]Se seteo los metros de la propiedad", 1)
         VAR_VALIDACIONES['set_metros'] = True
     except:
+
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][metros:{mts}]No se pudo setear los metros cuadrados de la propiedad", 3)
         VAR_VALIDACIONES['set_metros'] = False
     try:
@@ -821,6 +827,7 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                 escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][se_puede_publicar:{publicar}]", 1)
 
                 if publicar:
+
                     try:
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se intenta clickear el boton para publicar", 2)
                         navegador.find_element(By.XPATH, "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[3]").click()
@@ -828,6 +835,7 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Esperando que cargue la ventana publicado", 2)
                         publicado = esperarPorObjeto(navegador, 5, By.XPATH, "/html/body/div/div/div/div[1]/div[2]/div/div[2]/div[1]", "Publicado", numero_usuario, ide)
                         if publicado:
+
                             base_remax.loc[indice, f'{numero_usuario}publicado_info'] = '1'
                             contador_publicados += 1
                             escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Publicado!", 1)
@@ -840,7 +848,7 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                             if contador_publicados >= cantidad_a_publicar:
                                 escribir_en_log(f"[usuario:{numero_usuario}][publicados:{contador_publicados}]Se alcanzo la cantidad de publicaciones establecida", 1)
                                 break
-                    except Exception as ex:
+                    except:
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Por algun motivo no se pudo publicar la propiedad", 3)
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}] {VAR_VALIDACIONES}", 3)
                         pass
@@ -850,8 +858,18 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                         f"[usuario:{numero_usuario}][ide:{ide}]Por algun motivo no se pudo publicar la propiedad", 3)
                     escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}] {VAR_VALIDACIONES}", 3)
                     reiniciar_publicar_info(navegador)
-
-
+                    # se incrementa el contador de intentos para tener un control y desactivar la propiedad si es que falla muchas veces
+                    indice = base_remax.loc[base_remax['ide'] == ide].index[0]
+                    contador_intentos_publicar = base_remax.loc[base_remax["ide"] == ide]["intentos_info"].to_list()[0]
+                    if pd.notna(contador_intentos_publicar):
+                        base_remax.loc[indice, "intentos_info"] = contador_intentos_publicar + 1
+                    else:
+                        base_remax.loc[indice, "intentos_info"] = 1
+                    base_remax.to_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'), index=False)
+                    try:
+                        base_remax.to_excel(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.xlsx'), index=False)
+                    except:
+                        pass
                 reiniciar_publicar_info(navegador)
 
             else:
