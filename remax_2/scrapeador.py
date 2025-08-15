@@ -31,21 +31,29 @@ def esperarPorObjeto(navegador_abierto, tiempo, tipoObjeto, identificadorObjeto,
         :return
         bool
     """
+    escribir_en_log(f"Entrando a funcion esperarPorObjeto", 1)
     escribir_en_log(f"Esperando {tiempo}seg por: {nombre}", 1)
     try:
         WebDriverWait(navegador_abierto, tiempo).until(
             expected_conditions.presence_of_element_located((tipoObjeto, identificadorObjeto)))
+        escribir_en_log(f"Saliendo de funcion esperarPorObjeto - Exito", 1)
         return True
     except Exception as ex:
         escribir_en_log(f"No se cargo {nombre}", 2)
+        escribir_en_log(f"Saliendo de funcion esperarPorObjeto - Error", 1)
         return False
+
 class BaseRemax:
 
     def __init__(self):
+        escribir_en_log(f"Entrando a funcion __init__ de BaseRemax", 1)
         tabla = ""
+        escribir_en_log(f"Saliendo de funcion __init__ de BaseRemax", 1)
 
     def abrir_base(self):
+        escribir_en_log(f"Entrando a funcion abrir_base", 1)
         self.tabla = pd.read_csv(variables.RUTA_DF)
+        escribir_en_log(f"Saliendo de funcion abrir_base", 1)
 
     def validacion_link(self, link):
         """
@@ -60,13 +68,15 @@ class BaseRemax:
         -------
         bool
         """
+        escribir_en_log(f"Entrando a funcion validacion_link", 1)
         validacion = len(self.tabla.loc[self.tabla['link'] == link]) > 0
         escribir_en_log(f"Existe link: {validacion}", 1)
+        escribir_en_log(f"Saliendo de funcion validacion_link", 1)
         return validacion
 
     def guardar_base(self):
         """sobreescribe la base y actualiza"""
-
+        escribir_en_log(f"Entrando a funcion guardar_base", 1)
         escribir_en_log(f"Se actualizo la base", 1)
         self.tabla.to_csv(variables.RUTA_DF, index=False)
         try:
@@ -74,13 +84,16 @@ class BaseRemax:
         except:
             pass
         self.abrir_base()
+        escribir_en_log(f"Saliendo de funcion guardar_base", 1)
 
     def obtener_columnas(self):
-
-        return self.tabla.columns
+        escribir_en_log(f"Entrando a funcion obtener_columnas", 1)
+        columnas = self.tabla.columns
+        escribir_en_log(f"Saliendo de funcion obtener_columnas", 1)
+        return columnas
 
     def crear_nueva_fila(self, tipo_propiedad, link, ciudad):
-
+        escribir_en_log(f"Entrando a funcion crear_nueva_fila", 1)
         modelo_fila = [{'titulo': '', 'tipo': tipo_propiedad, 'precio': '',
                         'descripcion': '', 'link': link, 'ide': '',
                         'ciudad': ciudad, 'publicado_facebook': '',
@@ -91,22 +104,31 @@ class BaseRemax:
         self.tabla = pd.concat([self.tabla, modelo_DF], ignore_index=True)
         escribir_en_log(f"Nuevo registro para el link: {link}", 1)
         self.guardar_base()
+        escribir_en_log(f"Saliendo de funcion crear_nueva_fila", 1)
 
     def obtener_links(self):
-
-        return self.tabla.loc[(self.tabla['titulo'].isna()) | (self.tabla['descripcion'] == "")]['link']
+        escribir_en_log(f"Entrando a funcion obtener_links", 1)
+        links = self.tabla.loc[(self.tabla['titulo'].isna()) | (self.tabla['descripcion'] == "")]['link']
+        escribir_en_log(f"Saliendo de funcion obtener_links", 1)
+        return links
 
     def obtener_fila(self, ide):
-        return self.tabla.loc[self.tabla['ide'] == ide]
+        escribir_en_log(f"Entrando a funcion obtener_fila", 1)
+        fila = self.tabla.loc[self.tabla['ide'] == ide]
+        escribir_en_log(f"Saliendo de funcion obtener_fila", 1)
+        return fila
 
     def actualizar_columna(self, link, columna, dato):
         """actualiza una fila segun el link"""
+        escribir_en_log(f"Entrando a funcion actualizar_columna", 1)
         self.tabla.loc[self.tabla['link'] == link, columna] = dato
         self.guardar_base()
+        escribir_en_log(f"Saliendo de funcion actualizar_columna", 1)
 
 class RemaxScrap:
 
     def __init__(self, ciudad, propiedades_agregar, propiedades_scrapear):
+        escribir_en_log(f"Entrando a funcion __init__ de RemaxScrap", 1)
         self.url_pagina = "https://www.remax.com.py/"
         self.propiedades_agregar = propiedades_agregar
         self.navegador = None
@@ -134,29 +156,38 @@ class RemaxScrap:
         self.link_descargando = ""
         self.ide_descargando = "Sin Ide"
         self.link_intentos = {}
+        escribir_en_log(f"Saliendo de funcion __init__ de RemaxScrap", 1)
+
     def abrir_base(self):
         """abre la base para validaciones"""
+        escribir_en_log(f"Entrando a funcion abrir_base", 1)
         base = BaseRemax()
         base.abrir_base()
         self.base = base
+        escribir_en_log(f"Saliendo de funcion abrir_base", 1)
 
     def instanciar_navegador(self):
         """
             Crea o abre un navegador para nuestro objeto
         """
+        escribir_en_log(f"Entrando a funcion instanciar_navegador", 1)
         self.navegador = Navegador()
+        escribir_en_log(f"Saliendo de funcion instanciar_navegador", 1)
 
     def abrir_navegador(self):
         """
             Abre la pagina de remax
         """
+        escribir_en_log(f"Entrando a funcion abrir_navegador", 1)
         escribir_en_log(f"Se abre la pagina de remax", 1)
         self.navegador.abrir_url(self.url_pagina)
+        escribir_en_log(f"Saliendo de funcion abrir_navegador", 1)
 
     def buscar_ciudad(self):
         """
             Rellenar el campo de ciudad, luego realiza la busqueda
         """
+        escribir_en_log(f"Entrando a funcion buscar_ciudad", 1)
         if self.propiedades_agregar > 0:
             if self.navegador.rellenar_elemento(variables.path_campo_ciudad, self.ciudad_campo[self.ciudad]):
                 time.sleep(3)

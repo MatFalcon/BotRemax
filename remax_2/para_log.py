@@ -20,7 +20,7 @@ def escribir_en_log(mensaje, nivel_error):
         archivo_log = open(ruta_archivo_log, "a")
         hora_fecha = datetime.datetime.now()
         hora_fecha = hora_fecha.strftime("[%Y-%m-%d %H:%M:%S]")
-        texto = f"{hora_fecha} {niveles[nivel_error]} {mensaje}\n"
+        texto = f"{hora_fecha} {niveles[nivel_error]} {mensaje}\n"  
         archivo_log.write(texto)
         print(texto)
         archivo_log.close()

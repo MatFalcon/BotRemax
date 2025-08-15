@@ -21,7 +21,7 @@ class Navegador:
         self.options.add_argument('--disable-dev-shm-usage')
         self.options.add_argument("--log-level=3")  # para evitar las advertencias
         # Configura el servicio del navegador
-        self.edge_driver_path = 'C:\\Users\\ACER\\Documents\\Bots\\pythonProject\\prueba_inicial_remax\\driver\\msedgedriver.exe'
+        self.edge_driver_path = 'C:\\Users\\matia\\Desktop\\RemaxCentury\\BotRemax-main\\remax_2\\driver\\msedgedriver.exe'
         self.service = Service(self.edge_driver_path)
         # Inicializa el navegador
         self.driver = webdriver.Edge(service=self.service, options=self.options)

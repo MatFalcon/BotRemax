@@ -28,7 +28,7 @@ options.add_argument("--log-level=3")
 ciudades = ["Asuncion", "Sanber", "Fernando", "Sanlo", "Luque", "Lamba", "Aregua", "Altos", "Paraguay",
             "VillaElisa", "Presidente", "Ñemby", "Capiata"]
 driver = ""
-edge_driver_path = 'C:\\Users\\ACER\\Documents\\Bots\\pythonProject\\prueba_inicial_remax\\driver\\msedgedriver.exe'
+edge_driver_path = 'C:\\Users\\matia\\Desktop\\RemaxCentury\\BotRemax-main\\remax_2\\driver\\msedgedriver.exe'
 escribir_en_log("Comenzo la ejecucion", 1)
 edge_service = EdgeService(executable_path=edge_driver_path)
 
@@ -184,7 +184,7 @@ def realizar_publicaciones():
     """
 #0"Asuncion", 1"Sanber", 2"Fernando", 3"Sanlo", 4"Luque" , 5 "Lambare", 6 "Aregua", 7 "Alto", 8 "Paraguay"
 #9 "Villa Elisa", 10 "Presidente Hayes", 11 "Ñemby", 12 "Capiata"
-ejecutar_por_ciudad(12)
+ejecutar_por_ciudad(0)
 
 if cantidad_publicar > 0:
     realizar_publicaciones()

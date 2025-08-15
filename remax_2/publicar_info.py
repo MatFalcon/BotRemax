@@ -38,12 +38,37 @@ RUTA_ARCHIVO_CSV = PurePath(RUTA_BOT,'driver','remax_propiedades.csv')
 
 # Categorias y validaciones
 CATEGORIAS = {
-    "Residencia": 1, "Departamento": 2, "Casa": 1, "Terreno": 3, "Duplex": 5, "Edificio": 10,
-    "Depósito": 11, "Local Comercial": 4, "Oficina": 6, "Casa de Verano": 1, "Chalet": 1,
-    "Atypical": 1, "Bloque de departamentos": 2, "Business": 10, "Casa de campo": 1, "Condominio de Lujo": 1,
-    "Departamento con servicio de Hotel": 2, "Habitación": 2, "Health Clinic": 4, "Hotel": 10, "Industria": 4,
-    "Nueva Construcción": 10, "Quinta": 1, "Triplex": 5,"Espacio de estacionamiento":3,"Sin Tipo":1,"Accommodation":1,
-    "Villa": 1, "Sports Centre": 1
+    "Residencia": 1,
+    "Departamento": 2,
+    "Departamento con Jardín": 2,
+    "Casa": 1,
+    "Terreno": 3,
+    "Duplex": 5,
+    "Edificio": 10,
+    "Depósito": 11,
+    "Local Comercial": 4,
+    "Oficina": 6,
+    "Office Space":6,
+    "Casa de Verano": 1,
+    "Chalet": 1,
+    "Atypical": 1,
+    "Bloque de departamentos": 2,
+    "Business": 10,
+    "Casa de campo": 1,
+    "Condominio de Lujo": 1,
+    "Departamento con servicio de Hotel": 2,
+    "Habitación": 2,
+    "Health Clinic": 4,
+    "Hotel": 10,
+    "Industria": 4,
+    "Nueva Construcción": 10,
+    "Quinta": 1,
+    "Triplex": 5,
+    "Espacio de estacionamiento":3,
+    "Sin Tipo":1,
+    "Accommodation":1,
+    "Villa": 1,
+    "Sports Centre": 1
 }
 VAR_VALIDACIONES = {
     'set_titulo': False, 'set_descripcion': False, 'set_precio': False, 'set_ciudad': False,
@@ -62,17 +87,17 @@ path_boton_publicar = "/html/body/div[1]/div[6]/div/ul[2]/li[4]/a/span"
 path_boton_publicar2 = "/html/body/div[2]/div[7]/div[1]/div[1]/div[1]/div/div[1]/div[2]/a"
 # variables para publicaciones
 path_campo_titulo = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[1]/div[1]/input[1]"
-path_campo_precio = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[4]/div[2]/div[1]/input"
-path_campo_ciudad = '/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[6]/div[3]/div[2]/input'
+path_campo_precio = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[4]/div[3]/div[1]/input"
+path_campo_ciudad = '/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[6]/div[2]/div/input'
+path_campo_zona = '/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[6]/div[3]/div[2]/input'
 path_dormitorio = ["/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[2]/div/div[", "]/div"]
 path_banios = ["/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[3]/div/div[","]/div"]
 path_estado = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[5]/div/div[3]/div"
-path_descripcion = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[2]/div[5]/div[3]/div[2]/div[1]"
+path_descripcion = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[2]/div[4]/div[3]/div[2]/div[1]"
 path_seleccion_img = "/html/body/div[1 n]/div[8]/div[2]/div[2]/form/div[2]/div[2]/div[1]/div[2]/ul/li[2]/input"
-path_seleccion_tipo_propiedad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[6]/div[2]/div/div[1]/a"
+path_seleccion_tipo_propiedad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[4]/div[2]/div/div[1]/a"
 path_seleccion_tipo_propiedad2 = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[6]/div[2]/div/div[1]/i"
-path_tipo_propiedad = ["/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[6]/div[2]/div/div[2]/ul/li[","]"]
-
+path_tipo_propiedad = ["/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[4]/div[2]/div/div[2]/ul/li[","]"]
 def esperarPorObjeto(navegador_abierto, tiempo, tipoObjeto, identificadorObjeto, nombre, numero_usuario, ide):
     """
         Espera que se cargue el objeto de la pagina
@@ -177,7 +202,7 @@ def obtener_ide_para_publicar_info(numero_usuario):
     base_remax = pd.read_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'))
     columna = f"{numero_usuario}publicado_info"
     try:
-        ide = base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide'])) & (base_remax["intentos_info"] < 3)]['ide'].to_list()
+        ide = base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide'])) & (base_remax["intentos_info"] < 3) & (base_remax["tipo"]== "Casa")]['ide'].to_list()
     except:
         base_remax["intentos_info"] = 1
         ide = \
@@ -205,10 +230,11 @@ def elejir_precio_info(lista_precio, navegador, numero_usuario, ide):
     global VAR_VALIDACIONES
     escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se va a setear el precio [{lista_precio[0]}-{lista_precio[1]}]", 1)
     if lista_precio[1] == "USD":
+        time.sleep(1)
         navegador.find_element(By.XPATH,
-                               "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[4]/div[2]/div[2]/div[1]/a").click()
+                               "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[4]/div[3]/div[2]/div[1]/a").click()
         time.sleep(0.5)
-        navegador.find_element(By.XPATH, "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[4]/div[2]/div[2]/div[2]/ul/li[2]").click()
+        navegador.find_element(By.XPATH, "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[4]/div[3]/div[2]/div[2]/ul/li[2]/a/span").click()
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se cambio el tipo de moneda a USD", 1)
 
     try:
@@ -216,9 +242,8 @@ def elejir_precio_info(lista_precio, navegador, numero_usuario, ide):
                                path_campo_precio).send_keys(lista_precio[0])
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo el precio", 1)
         VAR_VALIDACIONES["set_precio"] = True
-    except:
+    except Exception as ex:
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear el precio", 3)
-
         VAR_VALIDACIONES["set_precio"] = False
 
     time.sleep(0.5)
@@ -240,7 +265,7 @@ def setear_zona_barrio(navegador, ciudad, numero_usuario, ide):
     """
     global VAR_VALIDACIONES
     ciudades_zonas = {
-        "Asuncion": "Asunción, Asunción\t",
+        "Asuncion": "Asunción, Asunción, Paraguay\t",
         "Sanber": "San Bernardino, Cordillera\t",
         "Fernando": "Fernando de la Mora, Central\t",
         "Luque": "Luque, Central\t",
@@ -257,6 +282,7 @@ def setear_zona_barrio(navegador, ciudad, numero_usuario, ide):
     palabra = ciudades_zonas.get(ciudad, "")
     try:
         navegador.find_element(By.XPATH, path_campo_ciudad).send_keys(palabra)
+        navegador.find_element(By.XPATH, path_campo_zona).send_keys(palabra)
         VAR_VALIDACIONES["set_barrio"] = True
         VAR_VALIDACIONES["set_ciudad"] = True
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo la zona de la propiedad", 2)
@@ -321,7 +347,15 @@ def setear_dormitorio_banios(navegador, base, numero_usuario, ide):
         seleccionar_elemento("/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[3]/div/div[1]/div")
         VAR_VALIDACIONES["set_banios"] = True
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo banios", 1)
-
+    # selecciona garaje    
+    seleccionar_elemento("/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[4]/div/div[1]/div")
+    # balcon    
+    seleccionar_elemento("/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[6]/div/div[1]/div/div")
+    #jardin
+    seleccionar_elemento("/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[11]/div/div[1]/div")
+    # estado
+    time.sleep(1)   
+    seleccionar_elemento("/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[5]/div/div[3]/span")
     # Si fallaron ambas validaciones iniciales, intentar de nuevo para habitaciones
     if not VAR_VALIDACIONES["set_habitaciones"] and not VAR_VALIDACIONES["set_banios"]:
         if pd.notna(habitaciones):
@@ -341,12 +375,105 @@ def setear_dormitorio_banios(navegador, base, numero_usuario, ide):
 def setear_estado(navegador, numero_usuario, ide):
     global VAR_VALIDACIONES
     try:
-        navegador.find_element(By.XPATH, path_estado).click()
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo estado", 1)
+        # Script JavaScript para hacer click en el elemento de estado
+        script = (
+            "var element = document.evaluate("
+            "'/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[5]/div/div[3]/div',"
+            "document,"
+            "null,"
+            "XPathResult.FIRST_ORDERED_NODE_TYPE,"
+            "null"
+            ").singleNodeValue;"
+            "if (element) {"
+            "  element.click();"
+            "} else {"
+            "  console.log('Elemento no encontrado.');"
+            "}"
+        )
+        
+        # Ejecutar el script JavaScript
+        navegador.execute_script(script)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo estado usando JavaScript", 1)
         VAR_VALIDACIONES["set_estado"] = True
     except Exception as ex:
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear el estado de la propiedad", 1)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear el estado de la propiedad usando JavaScript", 1)
         VAR_VALIDACIONES["set_estado"] = False
+
+def setear_conforts(navegador, numero_usuario, ide):
+    """
+    Setea los conforts de la propiedad usando JavaScript para hacer click en múltiples elementos.
+    """
+    time.sleep(1)
+    
+    # Script para balcón
+    try:
+        script_balcon = (
+            "var element = document.evaluate("
+            "'/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[6]/div/div[1]/div/div',"
+            "document,"
+            "null,"
+            "XPathResult.FIRST_ORDERED_NODE_TYPE,"
+            "null"
+            ").singleNodeValue;"
+            "if (element) {"
+            "  element.click();"
+            "} else {"
+            "  console.log('Elemento no encontrado.');"
+            "}"
+        )
+        navegador.execute_script(script_balcon)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo balcón usando JavaScript", 1)
+    except Exception as ex:
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear balcón usando JavaScript", 2)
+    
+    time.sleep(0.5)
+    
+    # Script para terraza
+    try:
+        script_terraza = (
+            "var element = document.evaluate("
+            "'/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[7]/div/div[1]/div/div',"
+            "document,"
+            "null,"
+            "XPathResult.FIRST_ORDERED_NODE_TYPE,"
+            "null"
+            ").singleNodeValue;"
+            "if (element) {"
+            "  element.click();"
+            "} else {"
+            "  console.log('Elemento no encontrado.');"
+            "}"
+        )
+        navegador.execute_script(script_terraza)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo terraza usando JavaScript", 1)
+    except Exception as ex:
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear terraza usando JavaScript", 2)
+    
+    time.sleep(0.5)
+    
+    # Script para jardín
+    try:
+        script_jardin = (
+            "var element = document.evaluate("
+            "'/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[11]/div/div[1]/div/div',"
+            "document,"
+            "null,"
+            "XPathResult.FIRST_ORDERED_NODE_TYPE,"
+            "null"
+            ").singleNodeValue;"
+            "if (element) {"
+            "  element.click();"
+            "} else {"
+            "  console.log('Elemento no encontrado.');"
+            "}"
+        )
+        navegador.execute_script(script_jardin)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo jardín usando JavaScript", 1)
+    except Exception as ex:
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear jardín usando JavaScript", 2)
+    
+    time.sleep(1)
+    return True
 
 def filtrar_caracteres_bmp(texto):
     # Expresión regular para encontrar caracteres fuera del BMP
@@ -505,7 +632,7 @@ def insertar_imagenes_info(ide, navegador, numero_usuario):
     escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Comienza a escribirse la direccion de la carpeta", 1)
     for car in carpetas_hasta_datos:
 
-        # Envía la ruta del archivo
+        # Envia la ruta del archivo
         pyautogui.write(car)  # Cambia la ruta y el nombre del archivo según tus necesidades
         pyautogui.press("enter")
         if car == "datos":
@@ -550,28 +677,29 @@ def seleccionar_tipo_info(tipo, navegador, numero_usuario, ide):
     time.sleep(1)
     try:
         navegador.find_element(By.XPATH, path_seleccion_tipo_propiedad).click()
-
     except Exception as ex:
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][funcion:seleccionar_tipo_info][intento:1]Error al queres seleccionar el tipo ", 2)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][funcion:seleccionar_tipo_info][intento:1]Error al queres seleccionar el tipo 1", 2)
 
         time.sleep(2)
         try:
             navegador.find_element(By.XPATH, path_seleccion_tipo_propiedad2).click()
         except:
-            escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][funcion:seleccionar_tipo_info][intento:2]Error al queres seleccionar el tipo", 2)
+            escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][funcion:seleccionar_tipo_info][intento:2]Error al queres seleccionar el tipo 2", 2)
 
     time.sleep(1)
     try:
         navegador.find_element(By.XPATH, f"{path_tipo_propiedad[0]}{CATEGORIAS[tipo]}{path_tipo_propiedad[1]}").click()
     except:
         print("Se encontro un error al querer cambiar la categoria: ", tipo)
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][funcion:seleccionar_tipo_info][intento:1][cat:{tipo}]Error al querer seleccionar categoria", 2)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][funcion:seleccionar_tipo_info][intento:1][cat:{tipo}]Error al querer seleccionar categoria 1", 2)
         time.sleep(1)
         try:
             navegador.find_element(By.XPATH,
                                    f"{path_tipo_propiedad[0]}{CATEGORIAS[tipo]}{path_tipo_propiedad[1]}").click()
-        except:
-            escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][funcion:seleccionar_tipo_info][intento:2][cat:{tipo}]Error al querer seleccionar categoria", 2)
+        except Exception as ex:
+            escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][funcion:seleccionar_tipo_info][intento:2][cat:{tipo}]Error al querer seleccionar categoria 2", 2)
+            print(ex)
+        time.sleep(120)
 def obtener_entero(dato):
     if pd.notna(dato):
         if "," in str(dato):
@@ -622,10 +750,11 @@ def setear_mts(navegador, construccion, tipo, numero_usuario, ide):
 
 
 def setear_comodidad_seguridad(navegador, tipo, numero_usuario, ide):
-    path_comodidad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[6]/div[2]/div/div/div[1]/a"
-    path_seleccion_comodidad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[6]/div[2]/div/div/div[2]/ul[1]/li[1]"
-    path_seguridad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[7]/div[2]/div/div[1]/a"
-    parh_seleccion_seguridad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[7]/div[2]/div/div[2]/ul/li[6]"
+    path_comodidad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[12]/div[2]/div/div/div[1]/a"
+    path_seleccion_comodidad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[12]/div[2]/div/div/div[2]/ul/li[3]/ul/li[7]/a/span"
+    path_seguridad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[13]/div[2]/div/div[1]/a"
+    parh_seleccion_seguridad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[13]/div[2]/div/div[2]/ul/li[2]/a/span"
+
 
     if tipo == "Departamento":
         path_seleccion_comodidad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[6]/div[2]/div/div/div[2]/ul/li[3]/ul/li[1]"
@@ -637,6 +766,7 @@ def setear_comodidad_seguridad(navegador, tipo, numero_usuario, ide):
         VAR_VALIDACIONES['set_seguridad'] = True
     except Exception as ex:
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear comodidad", 2)
+        time.sleep(1)
 
     # para cerrar u ocultar panel de seleccion
     try:
@@ -802,6 +932,7 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                 seleccionar_tipo_info(tipo, navegador, numero_usuario, ide)
                 setear_dormitorio_banios(navegador, base_remax, numero_usuario,ide)
                 setear_estado(navegador, numero_usuario, ide)
+                setear_conforts(navegador, numero_usuario, ide)
                 rellenar_descripcion_info(descripcion, navegador, numero_usuario, ide)
                 setear_mts(navegador, construccion, tipo, numero_usuario, ide)
                 setear_comodidad_seguridad(navegador, tipo, numero_usuario, ide)
@@ -826,14 +957,31 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                         publicar = False
                 escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][se_puede_publicar:{publicar}]", 1)
 
+                time.sleep(120)
                 if publicar:
-
+                    
                     try:
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se intenta clickear el boton para publicar", 2)
-                        navegador.find_element(By.XPATH, "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[3]").click()
+                        # Script JavaScript para hacer click en el botón de publicar
+                        script_publicar = (
+                            "var element = document.evaluate("
+                            "'/html/body/div[1]/div[8]/div[2]/div[2]/form/div[3]',"
+                            "document,"
+                            "null,"
+                            "XPathResult.FIRST_ORDERED_NODE_TYPE,"
+                            "null"
+                            ").singleNodeValue;"
+                            "if (element) {"
+                            "  element.click();"
+                            "  console.log('Clic realizado.');"
+                            "} else {"
+                            "  console.log('Elemento no encontrado.');"
+                            "}"
+                        )
+                        navegador.execute_script(script_publicar)
                         indice = base_remax.loc[base_remax['ide'] == ide].index[0]
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Esperando que cargue la ventana publicado", 2)
-                        publicado = esperarPorObjeto(navegador, 5, By.XPATH, "/html/body/div/div/div/div[1]/div[2]/div/div[2]/div[1]", "Publicado", numero_usuario, ide)
+                        publicado = esperarPorObjeto(navegador, 10, By.XPATH, "/html/body/div/div/div/div[1]/div[2]/div/div[2]/div[1]", "Publicado", numero_usuario, ide)
                         if publicado:
 
                             base_remax.loc[indice, f'{numero_usuario}publicado_info'] = '1'
@@ -851,12 +999,14 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                     except:
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Por algun motivo no se pudo publicar la propiedad", 3)
                         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}] {VAR_VALIDACIONES}", 3)
+                        time.sleep(120)
                         pass
 
                 else:
                     escribir_en_log(
                         f"[usuario:{numero_usuario}][ide:{ide}]Por algun motivo no se pudo publicar la propiedad", 3)
                     escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}] {VAR_VALIDACIONES}", 3)
+                    time.sleep(120)
                     reiniciar_publicar_info(navegador)
                     # se incrementa el contador de intentos para tener un control y desactivar la propiedad si es que falla muchas veces
                     indice = base_remax.loc[base_remax['ide'] == ide].index[0]
