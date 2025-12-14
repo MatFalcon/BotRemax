@@ -3,13 +3,14 @@ import numpy
 import warnings
 import pandas as pd
 import publicar_info as pi
-import remax_remast as remax
+import scrapeador_century as remax
 import publicar_clasipar as pp
 from para_log import escribir_en_log
 from credenciales import crenciales_paginas
+from selenium import webdriver
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service as EdgeService
-import scrapeador
+import variables
 
 from pathlib import PurePath, Path
 # Desactivar todas las advertencias de Pandas
@@ -28,7 +29,10 @@ options.add_argument("--log-level=3")
 ciudades = ["Asuncion", "Sanber", "Fernando", "Sanlo", "Luque", "Lamba", "Aregua", "Altos", "Paraguay",
             "VillaElisa", "Presidente", "Ñemby", "Capiata"]
 driver = ""
-edge_driver_path = 'C:\\Users\\matia\\Desktop\\RemaxCentury\\BotRemax-main\\remax_2\\driver\\msedgedriver.exe'
+RUTA_BOT = PurePath(Path().absolute())
+RUTA_DATOS = PurePath(RUTA_BOT, "datos")
+RUTA_DRIVER = f"{PurePath(RUTA_BOT, "driver")}\\msedgedriver.exe"
+edge_driver_path = RUTA_DRIVER
 escribir_en_log("Comenzo la ejecucion", 1)
 edge_service = EdgeService(executable_path=edge_driver_path)
 
@@ -83,7 +87,7 @@ def realizar_validacion_duplicados_base(base_validar, ruta_base):
     base_temporal = base_temporal.iloc[indices_sin_duplicados]
     base_temporal.to_csv(ruta_base, index=False)
 
-ruta_base = PurePath(remax.RUTA_BOT, "driver", "remax_propiedades.csv")
+ruta_base = PurePath(variables.RUTA_BOT, "driver", "remax_propiedades.csv")
 base_remax = pd.read_csv(ruta_base)
 realizar_validacion_duplicados_base(base_remax, ruta_base)
 
@@ -92,7 +96,7 @@ def ejecutar_por_ciudad(numero_ciudad):
 
     print(f"Ciudad a Scrapear: {ciudades[numero_ciudad]}\n", "="*80, "\n")
     driver = ""
-    remax_ = scrapeador.RemaxScrap(ciudades[numero_ciudad], cantidad_agregar, cantidad_scrapear)
+    remax_ = remax.RemaxScrap(ciudades[numero_ciudad], cantidad_agregar, cantidad_scrapear)
     if cantidad_scrapear > 0 or cantidad_agregar > 0:
         remax_.instanciar_navegador()
         remax_.abrir_navegador()
@@ -115,7 +119,7 @@ def validar_columna_usuario(credenciales):
     """"
         valida que existan las columnas suficientes para cada usuario
     """
-    base = pd.read_csv(remax.RUTA_DF)
+    base = pd.read_csv(variables.RUTA_DF)
     columnas = base.columns
 
     for numero_usuario in credenciales:
@@ -134,7 +138,7 @@ def validar_columna_usuario(credenciales):
         if "intentos_clasi" not in columnas:
             base["intentos_clasi"] = 1
 
-    base.to_csv(remax.RUTA_DF, index=False)
+    base.to_csv(variables.RUTA_DF, index=False)
 
 def realizar_publicaciones():
     driver = ""
@@ -148,7 +152,7 @@ def realizar_publicaciones():
     for numero_usuario in credenciales_clasipar:
 
         if credenciales_clasipar[numero_usuario]["ingresa"] == "Si":
-            driver = remax.webdriver.Edge(service=edge_service, options=options)
+            driver = webdriver.Edge(service=edge_service, options=options)
             pp.procesar_clasipar(driver, numero_usuario, credenciales_clasipar, cantidad_publicar)
             try:
                 driver.close()
@@ -161,10 +165,10 @@ def realizar_publicaciones():
         except:
             pass
 
-    # comienza a hacer als publicaciones en infocasas
+    # comienza a hacer las publicaciones en infocasas
     for numero_usuario in credenciales_info:
         if credenciales_info[numero_usuario]["ingresa"] == "Si":
-            driver = remax.webdriver.Edge(service=edge_service, options=options)
+            driver = webdriver.Edge(service=edge_service, options=options)
             pi.iniciar_sesion_infocasas(driver, numero_usuario, credenciales_info)
             pi.recorrer_resultados_pendientes_a_publicar_info(driver, numero_usuario, cantidad_publicar)
 

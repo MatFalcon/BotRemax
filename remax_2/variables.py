@@ -83,6 +83,11 @@ info_campo_contrasenia = "/html/body/div[11]/div/div[2]/form/div[2]/input"
 info_boton_iniciar_sesion = "/html/body/div[11]/div/div[2]/form/div[2]/div[2]"
 
 categorias = {
+        "departamento":3,
+        "casa":1,
+        "oficinas":8,
+        "departamento-en-pozo":3,
+        "terreno":7,
         "Residencia": 1,
         "Departamento": 3,
         "Casa": 1,
@@ -111,5 +116,17 @@ categorias = {
         "Sin Tipo": 1,
         "Accommodation": 1
     }
+
+
+path_campo_ciudad_century = '/html/body/main/div[1]/div/div/div[2]/div[2]/input'
+
+path_boton_buscar_century = '/html/body/main/div[1]/div/div/div[2]/div[6]/button'
+# Rutas fijas de paginación - ya no se usan, se calculan dinámicamente en obtener_xpath_siguiente()
+# path_boton_siguiente_century = '/html/body/div/main/div/div/div[5]/nav/ul/li[12]/button'
+# path_boton_siguiente_century2 = '/html/body/div/main/div/div/div[5]/nav/ul/li[7]/button'
+# path_boton_siguiente_century3 = '/html/body/div/main/div/div/div[5]/nav/ul/li[12]/button'
+
+path_resultado_century = ['/html/body/div/main/div/div/div[4]/div/div[', ']/div/div[1]/div/div[2]/a']
+
 
 
