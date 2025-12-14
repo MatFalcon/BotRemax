@@ -100,7 +100,8 @@ class BaseCentury:
                         'ciudad': ciudad, 'publicado_facebook': '',
                         'fecha_inserion': datetime.now().strftime("%d/%m/%Y"),
                         'publicado_clasipar': '', 'publicado_info': '',
-                        'publicado_hendyla': '', 'intentos':1}]
+                        'publicado_hendyla': '', 'intentos':1,
+                        'mts': '', 'mts_construccion': ''}]
         modelo_DF = pd.DataFrame(modelo_fila)
         self.tabla = pd.concat([self.tabla, modelo_DF], ignore_index=True)
         escribir_en_log(f"Nuevo registro para el link: {link}", 1)
@@ -119,11 +120,12 @@ class BaseCentury:
         escribir_en_log(f"Saliendo de funcion obtener_fila", 1)
         return fila
 
-    def actualizar_columna(self, link, columna, dato):
-        """actualiza una fila segun el link"""
+    def actualizar_columna(self, link, columna, dato, guardar=True):
+        """actualiza una fila segun el link, opcionalmente guarda en disco"""
         escribir_en_log(f"Entrando a funcion actualizar_columna", 1)
         self.tabla.loc[self.tabla['link'] == link, columna] = dato
-        self.guardar_base()
+        if guardar:
+            self.guardar_base()
         escribir_en_log(f"Saliendo de funcion actualizar_columna", 1)
 
 class RemaxScrap:
@@ -590,6 +592,55 @@ class RemaxScrap:
                 except Exception as ex:
                     escribir_en_log(f"Error al descargar imagen {ruta}: {str(ex)}", 2)
 
+    def extraer_metros(self):
+        """Extrae los metros de terreno y construcción"""
+        try:
+            # Contenedor padre de las características
+            path_contenedor = "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[3]/div/div[4]/div"
+            contenedor = self.navegador.obtener_elemento(By.XPATH, path_contenedor)
+            
+            if contenedor:
+                # Buscar todos los divs hijos directos
+                divs_hijos = contenedor.find_elements(By.XPATH, "./div")
+                
+                mtrs_terreno = "1"
+                mtrs_construccion = "1"
+                
+                for div in divs_hijos:
+                    try:
+                        # Buscar el título (Terreno o Construcción)
+                        titulo_elem = div.find_element(By.XPATH, "./span")
+                        titulo = titulo_elem.text.strip()
+                        
+                        # Obtener el texto completo del div
+                        texto_completo = div.text.strip() # "Terreno\n500,0 m²"
+                        
+                        # Extraer el valor numérico
+                        valor_raw = texto_completo.replace(titulo, "").strip() # "500,0 m²"
+                        valor_limpio = valor_raw.replace("m²", "").replace(".", "").replace(",", ".").strip() # "500.0"
+                        
+                        # Convertir a entero (truncando decimales si es necesario, como pide el usuario)
+                        try:
+                            valor_final = str(int(float(valor_limpio)))
+                        except:
+                            valor_final = "1"
+                        
+                        if "Terreno" in titulo:
+                            mtrs_terreno = valor_final
+                            escribir_en_log(f"Metros Terreno encontrado: {mtrs_terreno}", 1)
+                            self.base.actualizar_columna(self.link_descargando, "mts", mtrs_terreno, guardar=False)
+                            
+                        elif "Construcción" in titulo:
+                            mtrs_construccion = valor_final
+                            escribir_en_log(f"Metros Construcción encontrado: {mtrs_construccion}", 1)
+                            self.base.actualizar_columna(self.link_descargando, "mts_construccion", mtrs_construccion, guardar=False)
+                            
+                    except Exception as e:
+                        continue
+                        
+        except Exception as ex:
+             escribir_en_log(f"Error al extraer metros: {str(ex)}", 2)
+
     def scrapear_propiedades_pendientes(self):
         if self.propiedades_scrapear > 0:
             escribir_en_log(f"Funcion scrapear_propiedades_pendientes", 1)
@@ -606,23 +657,44 @@ class RemaxScrap:
                     escribir_en_log(f"Se abre el link: {link}", 1)
                     self.link_descargando = link
                     self.navegador.abrir_url(link)
+                    
                     # Esperar a que cargue el título usando el nuevo XPATH de Century21
                     path_titulo_century = "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[3]/div/div[4]/h1"
-                    esperarPorObjeto(self.navegador.driver, 10, By.XPATH, path_titulo_century, "Titulo Propiedad")
-                    # funcion para extraer todos los campos
-                    if self.validar_pagina_existe():
-                        self.extraer_titulo()
-                        self.extraer_precio()
-                        self.extraer_id()
-                        self.extraer_descripcion()
-                        self.extraer_ano_construccion()
-                        self.extraer_atributos_tabla()
-                        self.descargar_imagenes()
+                    
+                    # Verificar si carga el título, si no, asumir que la página está rota/eliminada
+                    titulo_cargado = esperarPorObjeto(self.navegador.driver, 10, By.XPATH, path_titulo_century, "Titulo Propiedad")
+                    
+                    if not titulo_cargado:
+                         escribir_en_log(f"No cargó la página correctamente (título no encontrado). Marcando como eliminado.", 2)
+                         # Marcar como eliminado para no volver a intentar
+                         try:
+                             # Actualizar en memoria sin guardar en disco cada vez
+                             for columna in self.base.obtener_columnas():
+                                 if "publicado" in columna:
+                                     self.base.actualizar_columna(self.link_descargando, columna, 1, guardar=False)
+                             
+                             self.base.actualizar_columna(self.link_descargando, "descripcion", "Eliminado - No Carga", guardar=False)
+                             # Guardar solo al final de todas las actualizaciones
+                             self.base.actualizar_columna(self.link_descargando, "titulo", "Eliminado - No Carga", guardar=True)
+                             
+                         except Exception as ex:
+                             escribir_en_log(f"Error al marcar como eliminado: {str(ex)}", 2)
+                    else:
+                        # funcion para extraer todos los campos
+                        if self.validar_pagina_existe():
+                            self.extraer_titulo()
+                            self.extraer_precio()
+                            self.extraer_id()
+                            self.extraer_descripcion()
+                            self.extraer_ano_construccion()
+                            self.extraer_metros() # Nuevo metodo agregado
+                            self.extraer_atributos_tabla()
+                            self.descargar_imagenes()
 
-                        resultados_validos_descargador += 1
+                            resultados_validos_descargador += 1
 
-                    if resultados_validos_descargador >= self.propiedades_scrapear:
-                        break
+                        if resultados_validos_descargador >= self.propiedades_scrapear:
+                            break
 
                 contador_proceso += 1
 

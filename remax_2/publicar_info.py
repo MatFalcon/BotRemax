@@ -228,7 +228,10 @@ def obtener_ide_para_publicar_info(numero_usuario):
     base_remax = pd.read_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'))
     columna = f"{numero_usuario}publicado_info"
     try:
-        ide = base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide'])) & (base_remax["intentos_info"] < 3)]['ide'].to_list()
+        ide = base_remax.loc[(base_remax[columna].isna()) & 
+                            (pd.notna(base_remax['ide'])) &
+                            (base_remax["tipo"] == "casa") &
+                            (base_remax["intentos_info"] < 3)]['ide'].to_list()
     except:
         base_remax["intentos_info"] = 1
         ide = \
@@ -813,35 +816,33 @@ def obtener_entero(mts):
         return 0 # Devuelve 0 o maneja el error según tu lógica de negocio
 
 def setear_mts(navegador, construccion, tipo, numero_usuario, ide):
-
+    # struccion es una tupla o lista: [mts_terreno, mts_construccion]
+    
     path_mts_edificados = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[11]/div/input"
     path_mts_terreno = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[2]/div[1]/div/input"
 
-    mts = construccion[0]
-    area = construccion[1]
+    mts_terreno = str(construccion[0]) if construccion[0] and str(construccion[0]) != 'nan' else "1"
+    mts_construcc = str(construccion[1]) if construccion[1] and str(construccion[1]) != 'nan' else "1"
+    
     global VAR_VALIDACIONES
-    # convertir a entero
-    mts = obtener_entero(mts)
-    area = obtener_entero(area)
 
-    if tipo == "Terreno":
-        path_mts_terreno = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[2]/div[1]/div/input"
-
+    # Para terreno
     try:
-        navegador.find_element(By.XPATH, path_mts_terreno).send_keys(mts)
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts:{mts}]Se seteo los metros de la propiedad", 1)
+        navegador.find_element(By.XPATH, path_mts_terreno).send_keys(mts_terreno)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts_terreno:{mts_terreno}]Se seteo los metros de terreno", 1)
         VAR_VALIDACIONES['set_metros'] = True
     except:
-
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][metros:{mts}]No se pudo setear los metros cuadrados de la propiedad", 3)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear los metros de terreno", 2)
         VAR_VALIDACIONES['set_metros'] = False
-    try:
-        navegador.find_element(By.XPATH, path_mts_edificados).send_keys(area)
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts:{area}]Se seteo los metros de la propiedad", 1)
-        VAR_VALIDACIONES['set_metros'] = True
 
+    # Para construccion
+    try:
+        navegador.find_element(By.XPATH, path_mts_edificados).send_keys(mts_construcc)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts_const:{mts_construcc}]Se seteo los metros edificados", 1)
+        # Si al menos uno se seteo, consideramos validado (o según requerimiento estricto)
+        VAR_VALIDACIONES['set_metros'] = True
     except:
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][metros:{area}]No se pudo setear los metros cuadrados de la propiedad", 3)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear los metros edificados", 2)
 
 
 def setear_comodidad_seguridad(navegador, tipo, numero_usuario, ide):
@@ -1013,13 +1014,14 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
             ciudad = datos_propiedad['ciudad']
             precio = datos_propiedad['precio']
             tipo_moneda = datos_propiedad['tipo_moneda']
-            mts = datos_propiedad['mts']
+            mts = datos_propiedad['mts'] # Metros terreno
             try:
-                area = datos_propiedad["area"]
+                mts_construccion = datos_propiedad["mts_construccion"] # Metros construccion
             except:
-                area = 0
-
-            construccion = [mts, area]
+                mts_construccion = "1"
+            
+            # Pasamos lista con [terreno, construccion]
+            construccion = [mts, mts_construccion]
 
             # comenzamos a rellenar los campos en el formulario de publicacion
             rellenar_titulo_info(titulo, navegador, numero_usuario)
@@ -1064,7 +1066,7 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                         publicar = False
                 escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][se_puede_publicar:{publicar}]", 1)
                 
-                #input("Publicar si o no mrd")
+                input("Publicar si o no mrd")
                 if publicar:
                     
                     try:
@@ -1087,7 +1089,7 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                         # )
                         # navegador.execute_script(script_publicar)
                         navegador.find_element(By.XPATH, path_boton_guardar_publicar).click()
-                        print("SE CLINETO PUBLICAE")
+                        print("Se Clickeo PUBLICAR")
                         
                         # Fix: búsqueda robusta del índice (intentar float primero, luego string)
                         try:
