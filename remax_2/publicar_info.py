@@ -567,16 +567,39 @@ def obtener_datos_propiedad(ide, base_remax):
     propiedad['titulo'] = base_remax.loc[base_remax['ide'] == float(ide)]['titulo'].to_list()[0]
     propiedad['descripcion'] = base_remax.loc[base_remax['ide'] == float(ide)]['descripcion'].to_list()[0]
     propiedad['ciudad'] = base_remax.loc[base_remax['ide'] == float(ide)]['ciudad'].to_list()[0]
-    propiedad['mts'] = base_remax.loc[base_remax['ide'] == float(ide)]['mts'].to_list()[0]
+    # Metros de terreno y construcción.  Utilizamos 'mts' para el terreno y
+    # 'mts_construccion' para metros edificados.  Si alguna columna no existe
+    # en la base se asigna por defecto 0 para facilitar el manejo posterior.
+    try:
+        propiedad['mts'] = base_remax.loc[base_remax['ide'] == float(ide)]['mts'].to_list()[0]
+    except Exception:
+        propiedad['mts'] = 0
+
+    # Leer metros de construcción desde la columna nueva.  Si no existe,
+    # intentar leer desde 'area' por compatibilidad.  Si ambas fallan, usar 0.
+    try:
+        propiedad['mts_construccion'] = base_remax.loc[base_remax['ide'] == float(ide)]['mts_construccion'].to_list()[0]
+    except Exception:
+        try:
+            propiedad['mts_construccion'] = base_remax.loc[base_remax['ide'] == ide]['area'].to_list()[0]
+        except Exception:
+            propiedad['mts_construccion'] = 0
+
+    # Normalizar valores NaN a 0 para evitar propagación de NaNs
+    if pd.isna(propiedad.get('mts')):
+        propiedad['mts'] = 0
+    if pd.isna(propiedad.get('mts_construccion')):
+        propiedad['mts_construccion'] = 0
+
+    # Mantener también la clave 'area' para compatibilidad antigua.  Si existe
+    # la columna 'area', usar ese valor; de lo contrario asignar el mismo que
+    # mts_construccion para reutilizar.
     try:
         propiedad['area'] = base_remax.loc[base_remax['ide'] == ide]['area'].to_list()[0]
-    except:
-        propiedad["area"] = 0
-    if pd.isna(propiedad["area"]):
-        propiedad["area"] = 0
-
-    if pd.isna(propiedad["mts"]):
-        propiedad["mts"] = 0
+    except Exception:
+        propiedad['area'] = propiedad['mts_construccion']
+    if pd.isna(propiedad['area']):
+        propiedad['area'] = propiedad['mts_construccion']
 
     return propiedad
 def insertar_imagenes_info(ide, navegador, numero_usuario):

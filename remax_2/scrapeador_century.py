@@ -53,7 +53,29 @@ class BaseCentury:
 
     def abrir_base(self):
         escribir_en_log(f"Entrando a funcion abrir_base", 1)
+        # Leer la base desde el CSV.  Si el archivo no contiene las nuevas columnas de metros
+        # (mts para terreno y mts_construccion para metros edificados), se agregan dinámicamente
+        # con valores vacíos para evitar errores posteriormente al actualizar.
         self.tabla = pd.read_csv(variables.RUTA_DF)
+        # Asegurar que existan las columnas necesarias para metros de terreno y construcción.
+        columnas_necesarias = ["mts", "mts_construccion"]
+        columnas_actuales = set(self.tabla.columns.tolist())
+        columnas_faltantes = [col for col in columnas_necesarias if col not in columnas_actuales]
+        if columnas_faltantes:
+            for col in columnas_faltantes:
+                # Agregar la columna con valores vacíos para todas las filas
+                self.tabla[col] = ""
+            # Guardar inmediatamente los cambios en disco para persistir la nueva estructura
+            try:
+                self.tabla.to_csv(variables.RUTA_DF, index=False)
+                # Guardar también a Excel si existe la ruta
+                try:
+                    self.tabla.to_excel(variables.RUTA_EXCEL, index=False)
+                except:
+                    pass
+            except Exception as e:
+                # Registrar un error si no se pudo guardar, pero continuar para evitar bucles
+                escribir_en_log(f"No se pudo agregar columnas de metros en la base: {str(e)}", 2)
         escribir_en_log(f"Saliendo de funcion abrir_base", 1)
 
     def validacion_link(self, link):
@@ -516,19 +538,40 @@ class RemaxScrap:
                     
                     escribir_en_log(f"Atributo encontrado: {nombre_atributo} = {valor}", 1)
                     
-                    # Mapear los nombres de atributos a las columnas
-                    if nombre_atributo == "Dormitorios":
+                    # Mapear los nombres de atributos a las columnas.  Se normaliza el nombre
+                    # del atributo para poder comparar sin acentos y evitar problemas de mayúsculas.
+                    nombre_norm = nombre_atributo.lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u").strip()
+
+                    if nombre_norm == "dormitorios":
                         self.base.actualizar_columna(self.link_descargando, "habitaciones", valor)
                         escribir_en_log(f"Se actualizo la columna habitaciones: {valor}", 1)
-                    elif nombre_atributo == "Baños":
+                    elif nombre_norm == "baños" or nombre_norm == "banos":
                         self.base.actualizar_columna(self.link_descargando, "banio", valor)
                         escribir_en_log(f"Se actualizo la columna banio: {valor}", 1)
-                    elif nombre_atributo == "Terreno":
-                        self.base.actualizar_columna(self.link_descargando, "mts", valor)
-                        escribir_en_log(f"Se actualizo la columna mts: {valor}", 1)
-                    elif nombre_atributo == "Construccion":
-                        self.base.actualizar_columna(self.link_descargando, "area", valor)
-                        escribir_en_log(f"Se actualizo la columna area: {valor}", 1)
+                    elif nombre_norm == "terreno":
+                        # Para metros de terreno se intenta convertir el valor a un entero siguiendo la misma
+                        # lógica que en extraer_metros: quitar la unidad y puntos/commas.
+                        try:
+                            valor_num = valor.lower().replace("m²", "").replace("m2", "").replace("m\u00b2", "").replace(".", "").replace(",", ".").strip()
+                            valor_int = str(int(float(valor_num)))
+                        except Exception:
+                            valor_int = "1"
+                        self.base.actualizar_columna(self.link_descargando, "mts", valor_int)
+                        escribir_en_log(f"Se actualizo la columna mts: {valor_int}", 1)
+                    elif nombre_norm.startswith("construccion"):
+                        # Metros de construcción (edificados).  Similar limpieza al valor del terreno.
+                        try:
+                            valor_num = valor.lower().replace("m²", "").replace("m2", "").replace("m\u00b2", "").replace(".", "").replace(",", ".").strip()
+                            valor_int = str(int(float(valor_num)))
+                        except Exception:
+                            valor_int = "1"
+                        # Actualizar la nueva columna para metros de construcción
+                        self.base.actualizar_columna(self.link_descargando, "mts_construccion", valor_int)
+                        escribir_en_log(f"Se actualizo la columna mts_construccion: {valor_int}", 1)
+                        # También actualizar la columna antigua 'area' por compatibilidad si existe
+                        if "area" in self.base.tabla.columns:
+                            self.base.actualizar_columna(self.link_descargando, "area", valor_int)
+                            escribir_en_log(f"Se actualizo la columna area (compatibilidad): {valor_int}", 1)
                 except Exception as ex:
                     escribir_en_log(f"Error al procesar atributo en div[{indice}]: {str(ex)}", 2)
                 
