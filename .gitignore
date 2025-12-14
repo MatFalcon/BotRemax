@@ -1,0 +1,9 @@
+# Archivos comprimidos
+*.rar
+
+# Logs
+log.txt
+*.log
+
+# Ejecutables
+*.exe
