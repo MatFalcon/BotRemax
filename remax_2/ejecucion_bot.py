@@ -25,9 +25,6 @@ options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument("--log-level=3")
 
-# ciudades configuradas actualmente
-ciudades = ["Asuncion", "Sanber", "Fernando", "Sanlo", "Luque", "Lamba", "Aregua", "Altos", "Paraguay",
-            "VillaElisa", "Presidente", "Ñemby", "Capiata"]
 driver = ""
 RUTA_BOT = PurePath(Path().absolute())
 RUTA_DATOS = PurePath(RUTA_BOT, "datos")
@@ -92,17 +89,19 @@ base_remax = pd.read_csv(ruta_base)
 realizar_validacion_duplicados_base(base_remax, ruta_base)
 
 
-def ejecutar_por_ciudad(numero_ciudad):
+def ejecutar_por_ciudad(ciudad):
+    """Inicia el proceso de scraping para la ciudad indicada.
 
-    print(f"Ciudad a Scrapear: {ciudades[numero_ciudad]}\n", "="*80, "\n")
+    ``ciudad`` puede ser el nombre de la ciudad (string)."""
+
+    print(f"Ciudad a Scrapear: {ciudad}\n", "="*80, "\n")
     driver = ""
-    remax_ = remax.RemaxScrap(ciudades[numero_ciudad], cantidad_agregar, cantidad_scrapear)
+    remax_ = remax.RemaxScrap(ciudad, cantidad_agregar, cantidad_scrapear)
     if cantidad_scrapear > 0 or cantidad_agregar > 0:
         remax_.instanciar_navegador()
         remax_.abrir_navegador()
         remax_.abrir_base()
     if cantidad_agregar > 0:
-
         remax_.buscar_ciudad()
         remax_.recorrer_ventanas()
 
@@ -186,9 +185,21 @@ def realizar_publicaciones():
             # cerrar navegador
             driver.close()
     """
-#0"Asuncion", 1"Sanber", 2"Fernando", 3"Sanlo", 4"Luque" , 5 "Lambare", 6 "Aregua", 7 "Alto", 8 "Paraguay"
-#9 "Villa Elisa", 10 "Presidente Hayes", 11 "Ñemby", 12 "Capiata"
-ejecutar_por_ciudad(0)
+# La ciudad a scrapear ahora se obtiene dinámicamente del Excel de configuración.
+# La hoja de configuración es la cuarta y el valor está en la celda A8.
+ciudad_config = crenciales_paginas()  # usamos la función para asegurarnos de cargar el excel
+ciudad_scrap = None
+try:
+    from credenciales import obtener_ciudad_scrapear
+    ciudad_scrap = obtener_ciudad_scrapear()
+except ImportError:
+    pass
+
+if ciudad_scrap:
+    ejecutar_por_ciudad(ciudad_scrap)
+else:
+    # fallback si algo falla: usar Asuncion por defecto
+    ejecutar_por_ciudad("Asuncion")
 
 if cantidad_publicar > 0:
     realizar_publicaciones()

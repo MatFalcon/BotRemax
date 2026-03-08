@@ -26,7 +26,6 @@ def obtener_credenciales_excel(hoja):
         }
     return dic
 
-
 def crenciales_paginas():
     """
         hendy, clasi, info
@@ -44,6 +43,20 @@ def crenciales_paginas():
     }
     excel.close()
     return dic
+
+
+def obtener_ciudad_scrapear():
+    """Lee la ciudad a scrapear desde la hoja de configuración del Excel.
+
+    Se espera que el valor se encuentre en la cuarta hoja (índice 3) en la fila
+    8, columna A.
+    """
+    excel = op.load_workbook(RUTA_EXCEL, read_only=True, data_only=True)
+    # cuarta hoja (índice 3, ya que el índice empieza en 0)
+    hoja_config = excel.worksheets[3]
+    ciudad = hoja_config.cell(row=8, column=1).value
+    excel.close()
+    return ciudad
 
 
 

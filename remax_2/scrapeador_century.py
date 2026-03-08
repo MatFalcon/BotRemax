@@ -161,7 +161,7 @@ class RemaxScrap:
         self.ciudad_campo = {
             "Asuncion": "Asunción",
             "Sanber": "San Ber",
-            "Fernando": "Fer",
+            "Fernando": "Fernando",
             "Sanlo": "San Lo",
             "Luque": "Luque",
             "Lamba": "Lamba",
