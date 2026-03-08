@@ -225,20 +225,70 @@ def reiniciar_publicar_info(navegador):
 
 def obtener_ide_para_publicar_info(numero_usuario):
 
+    # Leer CSV
     base_remax = pd.read_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'))
+    escribir_en_log(f"[usuario:{numero_usuario}] CSV cargado exitosamente", 1)
+    escribir_en_log(f"[usuario:{numero_usuario}] Total de filas: {len(base_remax)}", 1)
+    escribir_en_log(f"[usuario:{numero_usuario}] Columnas disponibles: {list(base_remax.columns)}", 1)
+    
+    # Inicializar intentos_info en 0 si está en NaN
+    escribir_en_log(f"[usuario:{numero_usuario}] ANTES: intentos_info NaN: {base_remax['intentos_info'].isna().sum()}", 1)
+    base_remax["intentos_info"] = base_remax["intentos_info"].fillna(0)
+    escribir_en_log(f"[usuario:{numero_usuario}] DESPUÉS: intentos_info NaN: {base_remax['intentos_info'].isna().sum()}", 1)
+    
+    # Guardar los cambios en el CSV
+    base_remax.to_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'), index=False)
+    escribir_en_log(f"[usuario:{numero_usuario}] CSV actualizado con intentos_info inicializados en 0", 1)
+    
     columna = f"{numero_usuario}publicado_info"
+    escribir_en_log(f"[usuario:{numero_usuario}] Buscando propiedades con columna: {columna}", 1)
+    
     try:
-        ide = base_remax.loc[(base_remax[columna].isna()) & 
-                            (pd.notna(base_remax['ide'])) &
-                            (base_remax["tipo"] == "casa") &
-                            (base_remax["intentos_info"] < 3)]['ide'].to_list()
-    except:
-        base_remax["intentos_info"] = 1
-        ide = \
-        base_remax.loc[(base_remax[columna].isna()) & (pd.notna(base_remax['ide'])) & (base_remax["intentos_info"] < 3)][
-            'ide'].to_list()
-    base_remax = ""
+        # Verificar si la columna existe
+        if columna not in base_remax.columns:
+            escribir_en_log(f"[usuario:{numero_usuario}] ADVERTENCIA: Columna '{columna}' no existe", 2)
+            raise KeyError(f"Columna {columna} no existe")
+        
+        # Log de cada condición de filtro
+        cond_no_publicado = base_remax[columna].isna()
+        cond_ide_valido = pd.notna(base_remax['ide'])
+        cond_intentos = base_remax["intentos_info"] < 3
+        
+        escribir_en_log(f"[usuario:{numero_usuario}] Propiedades SIN publicar (columna vacía): {cond_no_publicado.sum()}", 1)
+        escribir_en_log(f"[usuario:{numero_usuario}] Propiedades CON ide válido: {cond_ide_valido.sum()}", 1)
+        escribir_en_log(f"[usuario:{numero_usuario}] Propiedades CON intentos < 3: {cond_intentos.sum()}", 1)
+        
+        # Aplicar todos los filtros
+        ide = base_remax.loc[cond_no_publicado & cond_ide_valido & cond_intentos]['ide'].to_list()
+        escribir_en_log(f"[usuario:{numero_usuario}] Propiedades que cumplen TODOS los filtros: {len(ide)}", 1)
+        
+    except KeyError as e:
+        escribir_en_log(f"[usuario:{numero_usuario}] ERROR: Columna no existe ({e}), creando columna 'intentos_info'", 2)
+        base_remax["intentos_info"] = 0
+        escribir_en_log(f"[usuario:{numero_usuario}] Columna 'intentos_info' creada con valor 0", 1)
+        base_remax.to_csv(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'), index=False)
+        
+        # Reintentar con la columna nueva
+        cond_no_publicado = base_remax[columna].isna()
+        cond_ide_valido = pd.notna(base_remax['ide'])
+        cond_intentos = base_remax["intentos_info"] < 3
+        
+        escribir_en_log(f"[usuario:{numero_usuario}] (Reintento) Propiedades SIN publicar: {cond_no_publicado.sum()}", 1)
+        escribir_en_log(f"[usuario:{numero_usuario}] (Reintento) Propiedades CON ide válido: {cond_ide_valido.sum()}", 1)
+        escribir_en_log(f"[usuario:{numero_usuario}] (Reintento) Propiedades CON intentos < 3: {cond_intentos.sum()}", 1)
+        
+        ide = base_remax.loc[cond_no_publicado & cond_ide_valido & cond_intentos]['ide'].to_list()
+        escribir_en_log(f"[usuario:{numero_usuario}] (Reintento) Propiedades que cumplen TODOS los filtros: {len(ide)}", 1)
+    
+    except Exception as ex:
+        escribir_en_log(f"[usuario:{numero_usuario}] ERROR inesperado en obtener_ide_para_publicar_info: {ex}", 3)
+        ide = []
+    
+    # Log final
+    escribir_en_log(f"[usuario:{numero_usuario}] IDES ENCONTRADOS: {ide}", 1)
     print(f"IDES ENCONTRADOS \n{ide}")
+    base_remax = ""
+    
     return ide
 
 def rellenar_titulo_info(titulo, navegador, numero_usuario):
@@ -295,12 +345,12 @@ def setear_zona_barrio(navegador, ciudad, numero_usuario, ide):
     global VAR_VALIDACIONES
     ciudades_zonas = {
         "Asuncion": "Asunción, Asunción, Paraguay\t",
-        "Sanber": "San Bernardino, Cordillera\t",
-        "Fernando": "Fernando de la Mora, Central\t",
-        "Luque": "Luque, Central\t",
-        "Sanlo": "San Lorenzo, Central\t",
-        "Lamba": "Lambaré, Central\t",
-        "Aregua":"Areguá, Central\t",
+        "Sanber": "San Bernardino, Paraguay\t",
+        "Fernando": "Fernando de la Mora, Central, Paraguay\t",
+        "Luque": "Luque, Central, Paraguay\t",
+        "Sanlo": "San Lorenzo, Central, Paraguay\t",
+        "Lamba": "Lambaré, Central, Paraguay\t",
+        "Aregua":"Areguá, Central, Paraguay\t",
         "Altos": "Altos, Cordillera\t",
         "VillaElisa":"Villa Elisa, Central\t",
         "Presidente": "Villa Hayes, Presidente Hayes\t",
@@ -781,8 +831,14 @@ def seleccionar_tipo_info(tipo, navegador, numero_usuario, ide):
     
     time.sleep(1.5)
     
+    # Obtener el número de categoría, si no existe usar 1 (Casa por defecto)
+    numero_categoria = CATEGORIAS.get(tipo, 1)
+    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Tipo '{tipo}' mapeado a categoría {numero_categoria}", 1)
+    if tipo not in CATEGORIAS:
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]ADVERTENCIA: El tipo '{tipo}' no existe en CATEGORIAS, usando valor por defecto (1 - Casa)", 2)
+    
     # Intentar seleccionar el tipo de propiedad
-    xpath_opcion = f"{path_tipo_propiedad[0]}{CATEGORIAS[tipo]}{path_tipo_propiedad[1]}"
+    xpath_opcion = f"{path_tipo_propiedad[0]}{numero_categoria}{path_tipo_propiedad[1]}"
     if intentar_click_con_fallback(xpath_opcion, f"opcion {tipo}"):
          escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Tipo '{tipo}' seleccionado correctamente", 1)
          return True
