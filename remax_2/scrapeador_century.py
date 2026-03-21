@@ -509,22 +509,80 @@ class RemaxScrap:
             escribir_en_log(f"Se actualizo el año de construcción: {ano}", 1)
         else:
             escribir_en_log(f"No se pudo obtener el año de construcción", 2)
+    def _limpiar_metros(self, valor_texto):
+        """
+        Convierte un texto de metros a entero manejando diferentes formatos:
+        - "160,0 m²" → 160  (coma decimal)
+        - "160.0 m²" → 160  (punto decimal)
+        - "1.600,5 m²" → 1600  (punto miles, coma decimal)
+        - "1,600.5 m²" → 1600  (coma miles, punto decimal)
+        """
+        try:
+            # Quitar unidad y espacios
+            valor = valor_texto.lower().replace("m²", "").replace("m2", "").replace("m\u00b2", "").strip()
+            escribir_en_log(f"Limpiando metros - valor original: '{valor_texto}' → sin unidad: '{valor}'", 1)
+
+            # Detectar el formato basándose en la posición de puntos y comas
+            tiene_punto = "." in valor
+            tiene_coma = "," in valor
+
+            if tiene_punto and tiene_coma:
+                # Ambos presentes: el último es el decimal
+                pos_punto = valor.rfind(".")
+                pos_coma = valor.rfind(",")
+
+                if pos_coma > pos_punto:
+                    # Formato europeo: 1.600,50 → punto es miles, coma es decimal
+                    valor = valor.replace(".", "")  # Quitar separador miles
+                    valor = valor.replace(",", ".")  # Coma a punto decimal
+                else:
+                    # Formato americano: 1,600.50 → coma es miles, punto es decimal
+                    valor = valor.replace(",", "")  # Quitar separador miles
+
+            elif tiene_coma:
+                # Solo coma: verificar si es decimal o miles
+                partes = valor.split(",")
+                if len(partes) == 2 and len(partes[1]) <= 2:
+                    # Es decimal: "160,0" o "160,50"
+                    valor = valor.replace(",", ".")
+                else:
+                    # Es separador de miles: "1,600"
+                    valor = valor.replace(",", "")
+
+            elif tiene_punto:
+                # Solo punto: verificar si es decimal o miles
+                partes = valor.split(".")
+                if len(partes) == 2 and len(partes[1]) <= 2:
+                    # Es decimal: "160.0" o "160.50" - dejarlo así
+                    pass
+                else:
+                    # Es separador de miles: "1.600"
+                    valor = valor.replace(".", "")
+
+            resultado = str(int(float(valor)))
+            escribir_en_log(f"Metros procesados: '{valor_texto}' → {resultado}", 1)
+            return resultado
+
+        except Exception as ex:
+            escribir_en_log(f"Error al limpiar metros '{valor_texto}': {str(ex)}", 2)
+            return "1"
+
     def extraer_atributos_tabla(self):
         """Extrae los atributos iterando sobre los divs hijos del bloque de atributos"""
         base_path = "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[3]/div/div[4]/div/div"
         indice = 1
         continuar = True
-        
+
         while continuar:
             path_div = f"{base_path}[{indice}]"
             elemento_div = self.navegador.obtener_elemento(By.XPATH, path_div)
-            
+
             if elemento_div is not None:
                 try:
                     # Buscar el span con el nombre del atributo
                     elemento_span = elemento_div.find_element(By.TAG_NAME, "span")
                     nombre_atributo = elemento_span.text.strip()
-                    
+
                     # Buscar el br que contiene el valor (el siguiente elemento después del span)
                     # El valor está después del <br>, así que obtenemos el texto completo y separamos
                     texto_completo = elemento_div.text
@@ -535,9 +593,9 @@ class RemaxScrap:
                     else:
                         # Si no hay salto de línea, intentar obtener el texto después del span
                         valor = texto_completo.replace(nombre_atributo, "").strip()
-                    
+
                     escribir_en_log(f"Atributo encontrado: {nombre_atributo} = {valor}", 1)
-                    
+
                     # Mapear los nombres de atributos a las columnas.  Se normaliza el nombre
                     # del atributo para poder comparar sin acentos y evitar problemas de mayúsculas.
                     nombre_norm = nombre_atributo.lower().replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u").strip()
@@ -549,22 +607,11 @@ class RemaxScrap:
                         self.base.actualizar_columna(self.link_descargando, "banio", valor)
                         escribir_en_log(f"Se actualizo la columna banio: {valor}", 1)
                     elif nombre_norm == "terreno":
-                        # Para metros de terreno se intenta convertir el valor a un entero siguiendo la misma
-                        # lógica que en extraer_metros: quitar la unidad y puntos/commas.
-                        try:
-                            valor_num = valor.lower().replace("m²", "").replace("m2", "").replace("m\u00b2", "").replace(".", "").replace(",", ".").strip()
-                            valor_int = str(int(float(valor_num)))
-                        except Exception:
-                            valor_int = "1"
+                        valor_int = self._limpiar_metros(valor)
                         self.base.actualizar_columna(self.link_descargando, "mts", valor_int)
                         escribir_en_log(f"Se actualizo la columna mts: {valor_int}", 1)
                     elif nombre_norm.startswith("construccion"):
-                        # Metros de construcción (edificados).  Similar limpieza al valor del terreno.
-                        try:
-                            valor_num = valor.lower().replace("m²", "").replace("m2", "").replace("m\u00b2", "").replace(".", "").replace(",", ".").strip()
-                            valor_int = str(int(float(valor_num)))
-                        except Exception:
-                            valor_int = "1"
+                        valor_int = self._limpiar_metros(valor)
                         # Actualizar la nueva columna para metros de construcción
                         self.base.actualizar_columna(self.link_descargando, "mts_construccion", valor_int)
                         escribir_en_log(f"Se actualizo la columna mts_construccion: {valor_int}", 1)
@@ -574,18 +621,146 @@ class RemaxScrap:
                             escribir_en_log(f"Se actualizo la columna area (compatibilidad): {valor_int}", 1)
                 except Exception as ex:
                     escribir_en_log(f"Error al procesar atributo en div[{indice}]: {str(ex)}", 2)
-                
+
                 indice += 1
             else:
                 continuar = False
-        
+
         escribir_en_log(f"Se extrajeron los atributos de la propiedad", 1)
 
 
     def extraer_ruta_imagenes(self):
-        """Extrae las rutas de las imágenes usando los XPATHs de Century21"""
+        """Extrae las rutas de las imágenes en ALTA CALIDAD abriendo el lightbox/modal"""
         imagenes = []
-        # Lista de XPATHs para las imágenes de Century21
+        max_imagenes = 6
+
+        # XPath de la primera imagen thumbnail para hacer clic y abrir el lightbox
+        path_primer_thumbnail = "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[2]/div[1]/div/div[1]/img"
+
+        # XPaths del lightbox (modal de imágenes en alta calidad)
+        # La imagen principal del lightbox puede estar en diferentes posiciones
+        paths_imagen_lightbox = [
+            "/html/body/div[3]/section/div[1]/div[2]/div/img",
+            "/html/body/div[3]/section/div[1]/div[3]/div/img",
+            "/html/body/div[3]/section/div[1]/div/div/img",
+            "//div[contains(@class,'lightbox')]//img",
+            "//section//div[contains(@class,'slide')]//img"
+        ]
+
+        # XPaths posibles para el botón siguiente en el lightbox
+        paths_boton_siguiente = [
+            "/html/body/div[3]/section/div[1]/div[3]",  # Botón siguiente común
+            "/html/body/div[3]/section/div[1]/button[2]",
+            "//button[contains(@class,'next')]",
+            "//div[contains(@class,'next')]",
+            "//a[contains(@class,'next')]",
+            "/html/body/div[3]/section/div[2]/button[2]"
+        ]
+
+        # XPaths posibles para cerrar el lightbox
+        paths_cerrar_lightbox = [
+            "/html/body/div[3]/section/div[1]/div[1]",  # Botón cerrar común
+            "/html/body/div[3]/section/button",
+            "//button[contains(@class,'close')]",
+            "//div[contains(@class,'close')]",
+            "//span[contains(@class,'close')]"
+        ]
+
+        try:
+            # 1. Hacer clic en la primera imagen thumbnail para abrir el lightbox
+            elemento_thumbnail = self.navegador.obtener_elemento(By.XPATH, path_primer_thumbnail)
+            if elemento_thumbnail is None:
+                escribir_en_log("No se encontró thumbnail para abrir lightbox, usando método antiguo", 2)
+                return self._extraer_ruta_imagenes_fallback()
+
+            elemento_thumbnail.click()
+            escribir_en_log("Se hizo clic en thumbnail para abrir lightbox", 1)
+            time.sleep(1.5)  # Esperar a que abra el lightbox
+
+            # 2. Extraer imágenes del lightbox
+            intentos_sin_nueva = 0
+            max_intentos_sin_nueva = 3
+
+            while len(imagenes) < max_imagenes and intentos_sin_nueva < max_intentos_sin_nueva:
+                # Buscar la imagen actual en el lightbox
+                ruta_encontrada = None
+                for path_img in paths_imagen_lightbox:
+                    try:
+                        if path_img.startswith("//"):
+                            elemento_img = self.navegador.driver.find_element(By.XPATH, path_img)
+                        else:
+                            elemento_img = self.navegador.obtener_elemento(By.XPATH, path_img)
+
+                        if elemento_img:
+                            ruta = elemento_img.get_attribute("src")
+                            if ruta and ruta not in imagenes:
+                                imagenes.append(ruta)
+                                ruta_encontrada = ruta
+                                escribir_en_log(f"Imagen HD encontrada [{len(imagenes)}]: {ruta[:80]}...", 1)
+                                intentos_sin_nueva = 0
+                                break
+                    except:
+                        continue
+
+                if not ruta_encontrada:
+                    intentos_sin_nueva += 1
+
+                # 3. Intentar ir a la siguiente imagen
+                siguiente_clickeado = False
+                for path_sig in paths_boton_siguiente:
+                    try:
+                        if path_sig.startswith("//"):
+                            btn_siguiente = self.navegador.driver.find_element(By.XPATH, path_sig)
+                        else:
+                            btn_siguiente = self.navegador.obtener_elemento(By.XPATH, path_sig)
+
+                        if btn_siguiente:
+                            btn_siguiente.click()
+                            siguiente_clickeado = True
+                            time.sleep(0.8)  # Esperar transición
+                            break
+                    except:
+                        continue
+
+                if not siguiente_clickeado:
+                    escribir_en_log("No se pudo avanzar a siguiente imagen en lightbox", 2)
+                    break
+
+            # 4. Cerrar el lightbox
+            for path_cerrar in paths_cerrar_lightbox:
+                try:
+                    if path_cerrar.startswith("//"):
+                        btn_cerrar = self.navegador.driver.find_element(By.XPATH, path_cerrar)
+                    else:
+                        btn_cerrar = self.navegador.obtener_elemento(By.XPATH, path_cerrar)
+
+                    if btn_cerrar:
+                        btn_cerrar.click()
+                        escribir_en_log("Lightbox cerrado", 1)
+                        break
+                except:
+                    continue
+
+            # Si no se pudo cerrar con botón, intentar con ESC
+            if len(imagenes) > 0:
+                try:
+                    from selenium.webdriver.common.keys import Keys
+                    self.navegador.driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.ESCAPE)
+                except:
+                    pass
+
+        except Exception as ex:
+            escribir_en_log(f"Error en extracción de imágenes HD: {str(ex)}", 2)
+            # Fallback al método antiguo si falla
+            if len(imagenes) == 0:
+                return self._extraer_ruta_imagenes_fallback()
+
+        escribir_en_log(f"Total imágenes HD encontradas: {len(imagenes)}", 1)
+        return imagenes
+
+    def _extraer_ruta_imagenes_fallback(self):
+        """Método de respaldo: extrae thumbnails si falla el lightbox"""
+        imagenes = []
         paths_imagenes_century = [
             "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[2]/div[1]/div/div[1]/img",
             "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[2]/div[1]/div/div[2]/div/div[1]/img",
@@ -594,18 +769,18 @@ class RemaxScrap:
             "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[2]/div[1]/div/div[2]/div/div[4]/img",
             "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[2]/div[1]/div/div[2]/div/div[5]/img"
         ]
-        
+
         for path_imagen in paths_imagenes_century:
             elemento_imagen = self.navegador.obtener_elemento(By.XPATH, path_imagen)
             if elemento_imagen is not None:
                 ruta = self.navegador.obtener_atributo_elemento(elemento_imagen, "src")
                 if ruta and ruta not in imagenes:
                     imagenes.append(ruta)
-                    escribir_en_log(f"Imagen encontrada: {ruta}", 1)
-                if len(imagenes) >= 6:  # Limitar a 6 imágenes
+                    escribir_en_log(f"Imagen fallback encontrada: {ruta}", 1)
+                if len(imagenes) >= 6:
                     break
-        
-        escribir_en_log(f"Total de imágenes encontradas: {len(imagenes)}", 1)
+
+        escribir_en_log(f"Total imágenes fallback: {len(imagenes)}", 1)
         return imagenes
 
     def descargar_imagenes(self):
@@ -641,38 +816,34 @@ class RemaxScrap:
             # Contenedor padre de las características
             path_contenedor = "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[3]/div/div[4]/div"
             contenedor = self.navegador.obtener_elemento(By.XPATH, path_contenedor)
-            
+
             if contenedor:
                 # Buscar todos los divs hijos directos
                 divs_hijos = contenedor.find_elements(By.XPATH, "./div")
-                
+
                 mtrs_terreno = "1"
                 mtrs_construccion = "1"
-                
+
                 for div in divs_hijos:
                     try:
                         # Buscar el título (Terreno o Construcción)
                         titulo_elem = div.find_element(By.XPATH, "./span")
                         titulo = titulo_elem.text.strip()
-                        
+
                         # Obtener el texto completo del div
-                        texto_completo = div.text.strip() # "Terreno\n500,0 m²"
-                        
-                        # Extraer el valor numérico
-                        valor_raw = texto_completo.replace(titulo, "").strip() # "500,0 m²"
-                        valor_limpio = valor_raw.replace("m²", "").replace(".", "").replace(",", ".").strip() # "500.0"
-                        
-                        # Convertir a entero (truncando decimales si es necesario, como pide el usuario)
-                        try:
-                            valor_final = str(int(float(valor_limpio)))
-                        except:
-                            valor_final = "1"
-                        
+                        texto_completo = div.text.strip()  # "Terreno\n500,0 m²"
+
+                        # Extraer el valor numérico (después del título)
+                        valor_raw = texto_completo.replace(titulo, "").strip()  # "500,0 m²"
+
+                        # Usar la función de limpieza robusta
+                        valor_final = self._limpiar_metros(valor_raw)
+
                         if "Terreno" in titulo:
                             mtrs_terreno = valor_final
                             escribir_en_log(f"Metros Terreno encontrado: {mtrs_terreno}", 1)
                             self.base.actualizar_columna(self.link_descargando, "mts", mtrs_terreno, guardar=False)
-                            
+
                         elif "Construcción" in titulo:
                             mtrs_construccion = valor_final
                             escribir_en_log(f"Metros Construcción encontrado: {mtrs_construccion}", 1)
