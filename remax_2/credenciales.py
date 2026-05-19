@@ -6,7 +6,7 @@ import numpy
 
 RUTA_BOT = PurePath(Path().absolute())
 RUTA_DATOS = PurePath(RUTA_BOT, "datos")
-RUTA_DRIVER = f"{PurePath(RUTA_BOT, "driver")}\\msedgedriver.exe"
+RUTA_DRIVER = f"{PurePath(RUTA_BOT, 'driver')}\\msedgedriver.exe"
 RUTA_ARCHIVO_CSV = PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv')
 RUTA_EXCEL = PurePath(RUTA_BOT, "driver", "Pass.xlsx")
 

@@ -28,7 +28,7 @@ options.add_argument("--log-level=3")
 
 RUTA_BOT = PurePath(Path().absolute())
 RUTA_DATOS = PurePath(RUTA_BOT, "datos")
-RUTA_DRIVER = f"{PurePath(RUTA_BOT, "driver")}\\msedgedriver.exe"
+RUTA_DRIVER = f"{PurePath(RUTA_BOT, 'driver')}\\msedgedriver.exe"
 edge_driver_path = RUTA_DRIVER
 
 driver = ""
@@ -36,7 +36,7 @@ driver = ""
 # Rutas
 RUTA_BOT = PurePath(Path().absolute())
 RUTA_DATOS = PurePath(RUTA_BOT, "datos")
-RUTA_DRIVER = f"{PurePath(RUTA_BOT, "driver")}\\msedgedriver.exe"
+RUTA_DRIVER = f"{PurePath(RUTA_BOT, 'driver')}\\msedgedriver.exe"
 RUTA_ARCHIVO_CSV = PurePath(RUTA_BOT,'driver','remax_propiedades.csv')
 
 # Categorias y validaciones
@@ -604,11 +604,25 @@ def obtener_datos_propiedad(ide, base_remax):
     """
     propiedad = {}
     # procesar precio
-    precio_valor = base_remax.loc[base_remax['ide'] == float(ide)]['precio'].to_list()[0]
-    precio_valor = precio_valor.strip().lstrip()
-    precio_valor = precio_valor.split(" ")
-    tipo_moneda = precio_valor[1]
-    precio = int(float(precio_valor[0].replace(",", "")))  # inicialmente estaba convertido a float
+    precio_valor_original = str(base_remax.loc[base_remax['ide'] == float(ide)]['precio'].to_list()[0]).strip()
+    precio_valor = precio_valor_original.split(" ")
+    
+    if len(precio_valor) >= 2:
+        tipo_moneda = precio_valor[1]
+        precio_str = precio_valor[0].replace(",", "").replace(".", "")
+    else:
+        tipo_moneda = "GS"
+        precio_str = precio_valor_original.replace(",", "").replace(".", "")
+
+    try:
+        # Extraer solo los digitos para evitar errores con letras como 'A consultar'
+        solo_numeros = ''.join(filter(str.isdigit, precio_str))
+        if solo_numeros:
+            precio = int(solo_numeros)
+        else:
+            precio = 1  # Precio por defecto
+    except Exception:
+        precio = 1
 
     propiedad["tipo_moneda"] = tipo_moneda
     propiedad["precio"] = precio
@@ -895,36 +909,75 @@ def obtener_entero(mts):
         return 0 # Devuelve 0 o maneja el error según tu lógica de negocio
 
 def setear_mts(navegador, construccion, tipo, numero_usuario, ide):
-    # struccion es una tupla o lista: [mts_terreno, mts_construccion]
-    
+    # construccion es una lista: [mts_terreno, mts_construccion]
+
     path_mts_edificados = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[1]/div[11]/div/input"
     path_mts_terreno = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[2]/div[1]/div/input"
 
-    mts_terreno = str(construccion[0]) if construccion[0] and str(construccion[0]) != 'nan' else "1"
-    mts_construcc = str(construccion[1]) if construccion[1] and str(construccion[1]) != 'nan' else "1"
-    
+    # --- LOG: valores crudos recibidos ---
+    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] construccion_raw={construccion}", 1)
+    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] tipo='{tipo}'", 1)
+
+    mts_terreno_raw = construccion[0]
+    mts_construcc_raw = construccion[1]
+
+    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] mts_terreno_raw='{mts_terreno_raw}' ({type(mts_terreno_raw).__name__})", 1)
+    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] mts_construcc_raw='{mts_construcc_raw}' ({type(mts_construcc_raw).__name__})", 1)
+
+    mts_terreno = str(mts_terreno_raw) if mts_terreno_raw and str(mts_terreno_raw) != 'nan' else "1"
+    mts_construcc = str(mts_construcc_raw) if mts_construcc_raw and str(mts_construcc_raw) != 'nan' else "1"
+
+    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] mts_terreno_procesado='{mts_terreno}'", 1)
+    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] mts_construcc_procesado='{mts_construcc}'", 1)
+
     global VAR_VALIDACIONES
 
     # Para terreno
     try:
-        navegador.find_element(By.XPATH, path_mts_terreno).send_keys(mts_terreno)
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts_terreno:{mts_terreno}]Se seteo los metros de terreno", 1)
+        elem = navegador.find_element(By.XPATH, path_mts_terreno)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] Elemento terreno | visible={elem.is_displayed()} | enabled={elem.is_enabled()}", 1)
+
+        # Scroll al elemento para asegurarse que esté en pantalla
+        navegador.execute_script("arguments[0].scrollIntoView({block:'center'});", elem)
+        time.sleep(0.5)
+
+        if elem.is_displayed():
+            elem.clear()
+            elem.send_keys(mts_terreno)
+            escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts_terreno:{mts_terreno}]Se seteo los metros de terreno (send_keys)", 1)
+        else:
+            # El campo está oculto — usar JS para inyectar el valor directamente
+            escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] Campo terreno no visible, usando JS para setear valor", 2)
+            navegador.execute_script(
+                "arguments[0].removeAttribute('hidden');"
+                "arguments[0].style.display='block';"
+                "arguments[0].value = arguments[1];"
+                "arguments[0].dispatchEvent(new Event('input', {bubbles:true}));"
+                "arguments[0].dispatchEvent(new Event('change', {bubbles:true}));",
+                elem, mts_terreno
+            )
+            escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts_terreno:{mts_terreno}]Se seteo los metros de terreno (JS)", 1)
+
         VAR_VALIDACIONES['set_metros'] = True
-    except:
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear los metros de terreno", 2)
+    except Exception as ex:
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear los metros de terreno | ERROR={type(ex).__name__}: {str(ex)}", 2)
         VAR_VALIDACIONES['set_metros'] = False
 
     # Para construccion
     try:
-        navegador.find_element(By.XPATH, path_mts_edificados).send_keys(mts_construcc)
+        elem2 = navegador.find_element(By.XPATH, path_mts_edificados)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][setear_mts] Elemento edificados encontrado | visible={elem2.is_displayed()} | enabled={elem2.is_enabled()}", 1)
+        elem2.clear()
+        elem2.send_keys(mts_construcc)
         escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][mts_const:{mts_construcc}]Se seteo los metros edificados", 1)
-        # Si al menos uno se seteo, consideramos validado (o según requerimiento estricto)
         VAR_VALIDACIONES['set_metros'] = True
-    except:
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear los metros edificados", 2)
+    except Exception as ex:
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear los metros edificados | ERROR={type(ex).__name__}: {str(ex)}", 2)
+
 
 
 def setear_comodidad_seguridad(navegador, tipo, numero_usuario, ide):
+    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Iniciando setear_comodidad_seguridad", 1)
     path_comodidad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[12]/div[2]/div/div/div[1]/a"
     path_seleccion_comodidad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[12]/div[2]/div/div/div[2]/ul/li[3]/ul/li[7]/a/span"
     path_seguridad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[13]/div[2]/div/div[1]/a"
@@ -935,36 +988,43 @@ def setear_comodidad_seguridad(navegador, tipo, numero_usuario, ide):
         path_seleccion_comodidad = "/html/body/div[1]/div[8]/div[2]/div[2]/form/div[2]/div[1]/div[9]/div[6]/div[2]/div/div/div[2]/ul/li[3]/ul/li[1]"
 
     try:
-        navegador.find_element(By.XPATH, path_comodidad).click()
+        elem_com = navegador.find_element(By.XPATH, path_comodidad)
+        navegador.execute_script("arguments[0].scrollIntoView({block:'center'});", elem_com)
+        time.sleep(0.5)
+        navegador.execute_script("arguments[0].click();", elem_com)
         time.sleep(1)
-        navegador.find_element(By.XPATH, path_seleccion_comodidad).click()
+        elem_sel_com = navegador.find_element(By.XPATH, path_seleccion_comodidad)
+        navegador.execute_script("arguments[0].click();", elem_sel_com)
         VAR_VALIDACIONES['set_seguridad'] = True
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo comodidad", 1)
     except Exception as ex:
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear comodidad", 2)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear comodidad | ERROR={type(ex).__name__}: {str(ex)}", 2)
         time.sleep(1)
 
     # para cerrar u ocultar panel de seleccion
     try:
-        navegador.find_element(By.XPATH, path_comodidad).click()
+        elem_com = navegador.find_element(By.XPATH, path_comodidad)
+        navegador.execute_script("arguments[0].click();", elem_com)
     except:
         pass
     time.sleep(1)
-    navegador.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-    # Esperar un momento para que cargue el contenido adicional (si lo hay)
-    # Hacer scroll hacia arriba
-    navegador.execute_script("window.scrollTo(0, 0);")
     try:
-        navegador.find_element(By.XPATH, path_seguridad).click()
+        elem_seg = navegador.find_element(By.XPATH, path_seguridad)
+        navegador.execute_script("arguments[0].scrollIntoView({block:'center'});", elem_seg)
+        time.sleep(0.5)
+        navegador.execute_script("arguments[0].click();", elem_seg)
         time.sleep(1)
-        navegador.find_element(By.XPATH, parh_seleccion_seguridad).click()
+        elem_sel_seg = navegador.find_element(By.XPATH, parh_seleccion_seguridad)
+        navegador.execute_script("arguments[0].click();", elem_sel_seg)
         VAR_VALIDACIONES['set_seguridad'] = True
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]Se seteo seguridad", 1)
     except Exception as ex:
-        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear seguridad", 2)
+        escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo setear seguridad | ERROR={type(ex).__name__}: {str(ex)}", 2)
 
     try:
-        navegador.find_element(By.XPATH, path_seguridad).click()
-
+        elem_seg = navegador.find_element(By.XPATH, path_seguridad)
+        navegador.execute_script("arguments[0].click();", elem_seg)
     except:
         pass
 
@@ -1145,7 +1205,17 @@ def recorrer_resultados_pendientes_a_publicar_info(navegador, numero_usuario, ca
                         publicar = False
                 escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}][se_puede_publicar:{publicar}]", 1)
                 
-                input("Publicar si o no mrd")
+                # Extraer y mostrar el texto de "calidad de publicacion"
+                try:
+                    path_calidad = "/html/body/div[1]/div[8]/div[2]/div[1]/div/div/div/div[2]/p"
+                    elem_calidad = navegador.find_element(By.XPATH, path_calidad)
+                    texto_calidad = elem_calidad.text
+                    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]CALIDAD DE PUBLICACION: {texto_calidad}", 1)
+                    print(f"CALIDAD DE PUBLICACION: {texto_calidad}")
+                except Exception as e:
+                    escribir_en_log(f"[usuario:{numero_usuario}][ide:{ide}]No se pudo extraer la calidad de publicacion: {type(e).__name__} - {str(e)}", 2)
+                
+                #input("Publicar si o no mrd")
                 if publicar:
                     
                     try:

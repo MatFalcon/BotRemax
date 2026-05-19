@@ -272,30 +272,9 @@ class RemaxScrap:
 
                     if not self.base.validacion_link(link_propiedad):
                         if self.propiedades_agregar >= self.links_extraidos:
-                            # Abrir la página de detalle temporalmente para obtener el tipo de propiedad
-                            tipo_propiedad = "Sin Tipo"
-                            try:
-                                # Guardar la URL actual
-                                url_actual = self.navegador.driver.current_url
-                                # Abrir el link de la propiedad
-                                self.navegador.abrir_url(link_propiedad)
-                                # El wait ya lo hace la funcion de abajo
-                                # Extraer el tipo de propiedad con logica mejorada
-                                tipo_propiedad = self.extraer_tipo_propiedad()
-                                # Volver a la página de resultados
-                                self.navegador.abrir_url(url_actual)
-                                time.sleep(2)  # Esperar a que cargue la página de resultados
-                            except Exception as ex:
-                                escribir_en_log(f"Error al obtener tipo de propiedad para {link_propiedad}: {str(ex)}", 2)
-                                # Si hay error, intentar volver a la página de resultados
-                                try:
-                                    self.navegador.driver.back()
-                                    time.sleep(2)
-                                except:
-                                    pass
-                            
-                            # Crear la fila con el tipo de propiedad obtenido
-                            self.base.crear_nueva_fila(tipo_propiedad, link_propiedad, self.ciudad)
+                            # Solo guardamos el link. El tipo se extrae despues en scrapear_propiedades_pendientes
+                            # para evitar abrir cada pagina de detalle dos veces.
+                            self.base.crear_nueva_fila("Sin Tipo", link_propiedad, self.ciudad)
                             self.links_extraidos += 1
                             escribir_en_log(f"[links_extraidos:{self.links_extraidos}]", 1)
 
@@ -498,17 +477,73 @@ class RemaxScrap:
         escribir_en_log(f"No se pudo obtener el tipo de propiedad (probados índices {indices_a_probar})", 2)
         return tipo_propiedad
 
+    def _normalizar_label(self, label):
+        """Normaliza un label: lower + sin tildes + sin ':' final + trimmed. Mantiene la 'ñ'."""
+        return (
+            label.lower()
+            .replace("á", "a").replace("é", "e").replace("í", "i")
+            .replace("ó", "o").replace("ú", "u")
+            .strip().rstrip(":").strip()
+        )
+
+    def _atributos_bloque_principal(self):
+        """Itera los divs hijos del contenedor de atributos secundarios y devuelve
+        dict {label_normalizado: valor}.
+
+        Cada item del bloque tiene la forma:
+            <div>
+                Etiqueta:
+                <span>Valor</span>
+            </div>
+
+        La iteracion por label tolera que la posicion del item cambie entre propiedades.
+        """
+        resultado = {}
+        path_contenedor = "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[3]/div"
+        contenedor = self.navegador.obtener_elemento(By.XPATH, path_contenedor)
+        if not contenedor:
+            return resultado
+
+        divs_hijos = contenedor.find_elements(By.XPATH, "./div")
+        for div in divs_hijos:
+            try:
+                # Primer text node directo (la etiqueta), via JS para ignorar descendientes
+                label_raw = self.navegador.driver.execute_script(
+                    "var n=arguments[0].childNodes;"
+                    "for(var i=0;i<n.length;i++){"
+                    "  if(n[i].nodeType===3 && n[i].nodeValue.trim()) return n[i].nodeValue;"
+                    "} return '';",
+                    div
+                ) or ""
+                label = label_raw.strip().rstrip(":").strip()
+                if not label:
+                    continue
+
+                # Valor en el primer span directo
+                try:
+                    span = div.find_element(By.XPATH, "./span")
+                    valor = (span.text or "").strip()
+                except Exception:
+                    continue
+
+                if not valor:
+                    continue
+
+                resultado[self._normalizar_label(label)] = valor
+            except Exception:
+                continue
+
+        return resultado
+
     def extraer_ano_construccion(self):
-        """Extrae el año de construcción de la propiedad"""
-        path_ano_century = "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[3]/div/div[8]/span"
-        elemento_ano = self.navegador.obtener_elemento(By.XPATH, path_ano_century)
-        if elemento_ano is not None:
-            ano = elemento_ano.text.strip()
+        """Extrae el año de construcción iterando el bloque de atributos por su etiqueta."""
+        atributos = self._atributos_bloque_principal()
+        ano = atributos.get("año de construccion") or atributos.get("ano de construccion")
+        if ano:
             escribir_en_log(f"Se obtuvo el año de construcción: {ano}", 1)
             self.base.actualizar_columna(self.link_descargando, "ano_construccion", ano)
-            escribir_en_log(f"Se actualizo el año de construcción: {ano}", 1)
         else:
-            escribir_en_log(f"No se pudo obtener el año de construcción", 2)
+            escribir_en_log("No se pudo obtener el año de construcción", 2)
     def _limpiar_metros(self, valor_texto):
         """
         Convierte un texto de metros a entero manejando diferentes formatos:
@@ -567,6 +602,41 @@ class RemaxScrap:
             escribir_en_log(f"Error al limpiar metros '{valor_texto}': {str(ex)}", 2)
             return "1"
 
+    def _extraer_valor_de_div(self, elemento_div, nombre_atributo):
+        """Extrae el valor de un div de atributo tolerando iconos SVG, layout inline o saltos.
+
+        Estrategia:
+        1. Obtiene el texto del div via .text y como fallback innerText por JS.
+        2. Le saca el nombre del atributo.
+        3. Si el texto restante tiene formato 'numero m²' (con o sin separadores), lo devuelve.
+        4. Si no, devuelve el primer entero encontrado.
+        5. Si nada matchea, devuelve cadena vacia.
+        """
+        textos_a_probar = []
+        try:
+            textos_a_probar.append(elemento_div.text or "")
+        except Exception:
+            pass
+        try:
+            innertext_js = self.navegador.driver.execute_script(
+                "return arguments[0].innerText;", elemento_div
+            )
+            if innertext_js:
+                textos_a_probar.append(innertext_js)
+        except Exception:
+            pass
+
+        for texto in textos_a_probar:
+            limpio = texto.replace(nombre_atributo, "").strip()
+            if limpio:
+                match_m2 = re.search(r"([\d.,]+)\s*m\s*[²2]", limpio, re.IGNORECASE)
+                if match_m2:
+                    return match_m2.group(0).strip()
+                match_int = re.search(r"\d+", limpio)
+                if match_int:
+                    return match_int.group(0)
+        return ""
+
     def extraer_atributos_tabla(self):
         """Extrae los atributos iterando sobre los divs hijos del bloque de atributos"""
         base_path = "/html/body/div[1]/div[2]/div[2]/div[2]/div/div[3]/div/div[4]/div/div"
@@ -583,16 +653,7 @@ class RemaxScrap:
                     elemento_span = elemento_div.find_element(By.TAG_NAME, "span")
                     nombre_atributo = elemento_span.text.strip()
 
-                    # Buscar el br que contiene el valor (el siguiente elemento después del span)
-                    # El valor está después del <br>, así que obtenemos el texto completo y separamos
-                    texto_completo = elemento_div.text
-                    # El formato es: "Nombre\nValor", así que separamos por salto de línea
-                    partes = texto_completo.split('\n')
-                    if len(partes) >= 2:
-                        valor = partes[1].strip()
-                    else:
-                        # Si no hay salto de línea, intentar obtener el texto después del span
-                        valor = texto_completo.replace(nombre_atributo, "").strip()
+                    valor = self._extraer_valor_de_div(elemento_div, nombre_atributo)
 
                     escribir_en_log(f"Atributo encontrado: {nombre_atributo} = {valor}", 1)
 
@@ -800,7 +861,20 @@ class RemaxScrap:
                     # Usar el ID o un identificador único para el nombre de la imagen
                     id_imagen = self.ide_descargando if self.ide_descargando != "Sin Ide" else str(time.time())
                     nombre_imagen = PurePath(ruta_carpeta, f"{contador}_img_{id_imagen.split('-')[0] if '-' in id_imagen else id_imagen}.jpg")
-                    with urllib.request.urlopen(ruta, context=ctx) as u, open(nombre_imagen, "wb") as f:
+                    with urllib.request.urlopen(
+                        urllib.request.Request(
+                            ruta,
+                            headers={
+                                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                                "Referer": "https://cdn.21online.lat/",
+                                "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                                "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+                                "Accept-Encoding": "gzip, deflate, br",
+                                "Connection": "keep-alive",
+                            }
+                        ),
+                        context=ctx
+                    ) as u, open(nombre_imagen, "wb") as f:
                         escribir_en_log(f"Se descargo la imagen {nombre_imagen}", 1)
                         f.write(u.read())
                         fin_descarga = time.time()
@@ -821,39 +895,30 @@ class RemaxScrap:
                 # Buscar todos los divs hijos directos
                 divs_hijos = contenedor.find_elements(By.XPATH, "./div")
 
-                mtrs_terreno = "1"
-                mtrs_construccion = "1"
-
                 for div in divs_hijos:
                     try:
-                        # Buscar el título (Terreno o Construcción)
                         titulo_elem = div.find_element(By.XPATH, "./span")
                         titulo = titulo_elem.text.strip()
 
-                        # Obtener el texto completo del div
-                        texto_completo = div.text.strip()  # "Terreno\n500,0 m²"
+                        valor_raw = self._extraer_valor_de_div(div, titulo)
+                        if not valor_raw:
+                            continue
 
-                        # Extraer el valor numérico (después del título)
-                        valor_raw = texto_completo.replace(titulo, "").strip()  # "500,0 m²"
-
-                        # Usar la función de limpieza robusta
                         valor_final = self._limpiar_metros(valor_raw)
 
                         if "Terreno" in titulo:
-                            mtrs_terreno = valor_final
-                            escribir_en_log(f"Metros Terreno encontrado: {mtrs_terreno}", 1)
-                            self.base.actualizar_columna(self.link_descargando, "mts", mtrs_terreno, guardar=False)
+                            escribir_en_log(f"Metros Terreno encontrado: {valor_final}", 1)
+                            self.base.actualizar_columna(self.link_descargando, "mts", valor_final, guardar=False)
 
-                        elif "Construcción" in titulo:
-                            mtrs_construccion = valor_final
-                            escribir_en_log(f"Metros Construcción encontrado: {mtrs_construccion}", 1)
-                            self.base.actualizar_columna(self.link_descargando, "mts_construccion", mtrs_construccion, guardar=False)
-                            
-                    except Exception as e:
+                        elif "Construcción" in titulo or "Construccion" in titulo:
+                            escribir_en_log(f"Metros Construcción encontrado: {valor_final}", 1)
+                            self.base.actualizar_columna(self.link_descargando, "mts_construccion", valor_final, guardar=False)
+
+                    except Exception:
                         continue
-                        
+
         except Exception as ex:
-             escribir_en_log(f"Error al extraer metros: {str(ex)}", 2)
+            escribir_en_log(f"Error al extraer metros: {str(ex)}", 2)
 
     def scrapear_propiedades_pendientes(self):
         if self.propiedades_scrapear > 0:
@@ -897,6 +962,9 @@ class RemaxScrap:
                         # funcion para extraer todos los campos
                         if self.validar_pagina_existe():
                             self.extraer_titulo()
+                            tipo_propiedad = self.extraer_tipo_propiedad()
+                            if tipo_propiedad and tipo_propiedad != "Sin Tipo":
+                                self.base.actualizar_columna(self.link_descargando, "tipo", tipo_propiedad)
                             self.extraer_precio()
                             self.extraer_id()
                             self.extraer_descripcion()

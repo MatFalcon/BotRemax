@@ -28,7 +28,7 @@ options.add_argument("--log-level=3")
 driver = ""
 RUTA_BOT = PurePath(Path().absolute())
 RUTA_DATOS = PurePath(RUTA_BOT, "datos")
-RUTA_DRIVER = f"{PurePath(RUTA_BOT, "driver")}\\msedgedriver.exe"
+RUTA_DRIVER = f"{PurePath(RUTA_BOT, 'driver')}\\msedgedriver.exe"
 edge_driver_path = RUTA_DRIVER
 escribir_en_log("Comenzo la ejecucion", 1)
 edge_service = EdgeService(executable_path=edge_driver_path)
@@ -139,6 +139,63 @@ def validar_columna_usuario(credenciales):
 
     base.to_csv(variables.RUTA_DF, index=False)
 
+def precio_es_valido(precio_raw):
+    """Valida que el precio tenga formato 'NUMERO MONEDA' con numero > 0 y moneda reconocida (GS/$/USD)."""
+    if pd.isna(precio_raw):
+        return False
+    precio_str = str(precio_raw).strip()
+    if not precio_str or precio_str.lower() == "nan":
+        return False
+
+    partes = precio_str.split(" ")
+    if len(partes) < 2:
+        return False
+
+    moneda = partes[-1].upper()
+    if moneda not in ("GS", "$", "USD"):
+        return False
+
+    numero_str = partes[0].replace(",", "").replace(".", "")
+    solo_digitos = "".join(filter(str.isdigit, numero_str))
+    if not solo_digitos:
+        return False
+    try:
+        return int(solo_digitos) > 0
+    except ValueError:
+        return False
+
+
+def marcar_precios_invalidos_como_publicado():
+    """Marca silenciosamente como publicadas (='1') las filas cuyo precio no pasa la validacion,
+    en todas las columnas {usuario}publicado_info y {usuario}publicado_clasipar.
+    Evita el ciclo de 3-4 intentos perdidos por datos de precio incorrectos."""
+    base = pd.read_csv(variables.RUTA_DF)
+
+    columnas_info = [c for c in base.columns if c.endswith("publicado_info") and c != "publicado_info"]
+    columnas_clasi = [c for c in base.columns if c.endswith("publicado_clasipar") and c != "publicado_clasipar"]
+    columnas_objetivo = columnas_info + columnas_clasi
+
+    if not columnas_objetivo:
+        return
+
+    mask_invalido = ~base["precio"].apply(precio_es_valido)
+    cantidad = int(mask_invalido.sum())
+
+    if cantidad == 0:
+        escribir_en_log("Validacion de precio: 0 registros con precio invalido", 1)
+        return
+
+    for col in columnas_objetivo:
+        base.loc[mask_invalido & base[col].isna(), col] = "1"
+
+    base.to_csv(variables.RUTA_DF, index=False)
+    try:
+        base.to_excel(variables.RUTA_EXCEL, index=False)
+    except Exception:
+        pass
+    escribir_en_log(f"Validacion de precio: {cantidad} registros marcados como publicados (info+clasipar) por precio invalido", 1)
+
+
 def realizar_publicaciones():
     driver = ""
     credenciales_clasipar = crenciales_paginas()["clasi"]
@@ -146,6 +203,7 @@ def realizar_publicaciones():
     credenciales_hendy = crenciales_paginas()["hendy"]
     validar_columna_usuario(credenciales_info)
     validar_columna_usuario(credenciales_clasipar)
+    marcar_precios_invalidos_como_publicado()
 
     # comienza a realizar las publicaciones en clasipar
     for numero_usuario in credenciales_clasipar:

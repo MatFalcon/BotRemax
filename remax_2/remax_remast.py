@@ -28,7 +28,7 @@ RUTA_BOT = PurePath(Path().absolute())
 RUTA_DATOS = PurePath(RUTA_BOT, "datos")
 RUTA_DF = PurePath(RUTA_BOT, "driver", "remax_propiedades.csv")
 print(RUTA_DATOS)
-RUTA_DRIVER = f"{PurePath(RUTA_BOT, "driver")}\\msedgedriver.exe"
+RUTA_DRIVER = f"{PurePath(RUTA_BOT, 'driver')}\\msedgedriver.exe"
 print(RUTA_DRIVER)
 print(PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv'))
 # Obtener la fecha y hora actual

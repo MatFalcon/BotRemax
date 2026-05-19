@@ -20,7 +20,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 RUTA_BOT = PurePath(Path().absolute())
 RUTA_DATOS = PurePath(RUTA_BOT, "datos")
-RUTA_DRIVER = f"{PurePath(RUTA_BOT, "driver")}\\msedgedriver.exe"
+RUTA_DRIVER = f"{PurePath(RUTA_BOT, 'driver')}\\msedgedriver.exe"
 RUTA_ARCHIVO_CSV = PurePath(RUTA_BOT, 'driver', 'remax_propiedades.csv')
 options = Options()
 options.add_argument("--start-maximized")
@@ -77,7 +77,7 @@ def iniciar_sesion_clasipar(navegador, credenciales):
     # rellenar campos mail y contraseña
 
     navegador.find_element(By.XPATH, var.path_correo_clasipar_sesion).send_keys(credenciales["correo"])
-    escribir_en_log(f"Se setea el campo de correo [correo:{credenciales["correo"]}]", 1)
+    escribir_en_log(f"Se setea el campo de correo [correo:{credenciales['correo']}]", 1)
 
     navegador.find_element(By.XPATH, var.path_contrasena_clasipar_sesion).send_keys(credenciales["contra"])
     escribir_en_log("Se setea el campo de contraseña", 1)

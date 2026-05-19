@@ -16,12 +16,15 @@ def escribir_en_log(mensaje, nivel_error):
         except:
             pass
     if nivel_error != 4:
-        
-        archivo_log = open(ruta_archivo_log, "a")
+
+        archivo_log = open(ruta_archivo_log, "a", encoding="utf-8", errors="replace")
         hora_fecha = datetime.datetime.now()
         hora_fecha = hora_fecha.strftime("[%Y-%m-%d %H:%M:%S]")
-        texto = f"{hora_fecha} {niveles[nivel_error]} {mensaje}\n"  
+        texto = f"{hora_fecha} {niveles[nivel_error]} {mensaje}\n"
         archivo_log.write(texto)
-        print(texto)
+        try:
+            print(texto)
+        except UnicodeEncodeError:
+            print(texto.encode("ascii", errors="replace").decode("ascii"))
         archivo_log.close()
     
