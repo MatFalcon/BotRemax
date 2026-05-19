@@ -7,3 +7,23 @@ log.txt
 
 # Ejecutables
 *.exe
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Editores / IDE
+.vscode/
+.idea/
+
+# Claude Code (configuración local)
+.claude/
+
+# Datos descargados por el bot
+remax_2/datos/
